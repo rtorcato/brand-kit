@@ -131,6 +131,8 @@ export interface BrandOptions {
 	accent?: string
 	/** Rewrite the generated sources that differ, e.g. after a tagline or accent change. Never favicon.svg. */
 	update?: boolean
+	/** Also write the {@link SOCIAL} canvases. Once written, `update` keeps them current without it. */
+	social?: boolean
 }
 
 /** The @rtorcato family entry (from @rtorcato/shared-docs), matched on the package name. */
@@ -266,18 +268,77 @@ ${installPanel(meta, { x: 427, y: 650, w: 426, h: 78, size: 24 })}
 `
 }
 
-/** 1280×640 Open Graph / GitHub social card. Keep content inside an ~8% safe inset. */
-export function socialCardSvg(meta: BrandMeta): string {
-	return `${canvas(meta, 1280, 640, { cx: 0.1, cy: 0.05 })}
-${mark(590, 120, 100)}
+/** The social card's centred stack — mark, wordmark, tagline, pill — laid out on 1280×640. */
+function lockup(meta: BrandMeta): string {
+	return `${mark(590, 120, 100)}
 
 	<text x="640" y="300" text-anchor="middle" font-family="Avenir Next" font-weight="800" font-size="76" letter-spacing="-1.8">${wordmark(meta)}</text>
 
 ${taglineBlock(meta, { x: 640, y: 372, step: 42, size: 28, centred: true, maxChars: 44 })}
-${installPanel(meta, { x: 427, y: 470, w: 426, h: 78, size: 24 })}
+${installPanel(meta, { x: 427, y: 470, w: 426, h: 78, size: 24 })}`
+}
+
+/** 1280×640 Open Graph / GitHub social card. Keep content inside an ~8% safe inset. */
+export function socialCardSvg(meta: BrandMeta): string {
+	return `${canvas(meta, 1280, 640, { cx: 0.1, cy: 0.05 })}
+${lockup(meta)}
 </svg>
 `
 }
+
+type Box = { x: number; y: number; w: number; h: number }
+
+/** Where {@link lockup} actually draws on its 1280×640 canvas. */
+const LOCKUP_BOX: Box = { x: 160, y: 110, w: 960, h: 450 }
+
+/** Any other canvas: the social card's lockup scaled to fit, centred in `safe`. */
+function socialSvg(meta: BrandMeta, w: number, h: number, safe: Box): string {
+	const s = Math.min(safe.w / LOCKUP_BOX.w, safe.h / LOCKUP_BOX.h)
+	const tx = safe.x + safe.w / 2 - s * (LOCKUP_BOX.x + LOCKUP_BOX.w / 2)
+	const ty = safe.y + safe.h / 2 - s * (LOCKUP_BOX.y + LOCKUP_BOX.h / 2)
+	const r = (n: number): number => Math.round(n * 1000) / 1000
+	return `${canvas(meta, w, h, { cx: 0.1, cy: 0.05 })}
+	<g transform="translate(${r(tx)} ${r(ty)}) scale(${r(s)})">
+${lockup(meta)}
+	</g>
+</svg>
+`
+}
+
+/** 400×400 profile picture. The tile sits at 60% so a circular crop never clips its corners. */
+export function avatarSvg(meta: BrandMeta): string {
+	return `${canvas(meta, 400, 400, { cx: 0.1, cy: 0.05 })}
+${mark(80, 80, 240)}
+</svg>
+`
+}
+
+type SocialCanvas = [stem: string, w: number, h: number, svg: (meta: BrandMeta) => string]
+const social = (stem: string, w: number, h: number, safe: Box): SocialCanvas => [
+	stem,
+	w,
+	h,
+	(meta) => socialSvg(meta, w, h, safe),
+]
+
+/**
+ * `brand-kit --social`: profile and posting images, each written as `brand/<stem>.svg`.
+ * ponytail: safe areas are each platform's published guidance, eyeballed — nudge a box if a
+ * platform's chrome covers the lockup.
+ */
+export const SOCIAL: SocialCanvas[] = [
+	['avatar', 400, 400, avatarSvg],
+	social('instagram-post', 1080, 1080, { x: 86, y: 86, w: 908, h: 908 }),
+	// Instagram / TikTok / Facebook stories: the top and bottom 250px sit under app chrome.
+	social('story', 1080, 1920, { x: 86, y: 250, w: 908, h: 1420 }),
+	// X and LinkedIn put the profile photo over the bottom-left.
+	social('x-header', 1500, 500, { x: 360, y: 40, w: 1080, h: 340 }),
+	social('linkedin-banner', 1584, 396, { x: 420, y: 36, w: 1110, h: 300 }),
+	// The 1546×423 middle is the only part every device shows.
+	social('youtube-banner', 2560, 1440, { x: 507, y: 508, w: 1546, h: 423 }),
+	// Mobile crops the sides.
+	social('facebook-cover', 1640, 624, { x: 270, y: 60, w: 1100, h: 504 }),
+]
 
 /**
  * The render script. Sizes come from the #318 spec. It self-skips outputs whose
@@ -313,6 +374,15 @@ if [ -d "$img" ]; then
 		echo "rendered: $img/favicon-512.png"
 	fi
 fi
+
+# The --social canvases, each rendered only when its source exists.
+social() {
+	if [ -f "brand/$1.svg" ]; then
+		rsvg-convert -w "$2" -h "$3" "brand/$1.svg" -o "brand/$1.png"
+		echo "rendered: brand/$1.png"
+	fi
+}
+${SOCIAL.map(([stem, w, h]) => `social ${stem} ${w} ${h}`).join('\n')}
 `
 
 /**
@@ -360,9 +430,15 @@ export async function generateBrand(
 		['brand/social-card.svg', socialCardSvg(meta)],
 		['brand/render.sh', RENDER_SH, 0o755],
 	]
+	for (const [stem, , , svg] of SOCIAL) {
+		const rel = `brand/${stem}.svg`
+		if (opts.social || (await exists(path.join(targetDir, rel)))) files.push([rel, svg(meta)])
+	}
 	for (const [rel, contents, mode] of files) {
 		const file = path.join(targetDir, rel)
-		if (opts.update && rel !== 'brand/favicon.svg' && (await exists(file))) {
+		// --social refreshes render.sh too, or an older script would skip the new canvases.
+		const rewrite = opts.update || (opts.social && rel === 'brand/render.sh')
+		if (rewrite && rel !== 'brand/favicon.svg' && (await exists(file))) {
 			if ((await read(file)) === contents) continue
 			await writeFile(file, contents, mode ? { mode } : undefined)
 			written.push(rel)
@@ -386,13 +462,22 @@ export async function generateBrand(
 export const RSVG_HINT =
 	'   next: install librsvg to render the brand PNGs (`brew install librsvg`, apt: `apt-get install librsvg2-bin`), then re-run `brand-kit` or `brand/render.sh`'
 
-/** `[source, output, width, height]` under `brand/` — the same set render.sh draws. */
-const RENDERS: Array<[string, string, number, number]> = [
+/**
+ * `[source, output, width, height]` under `brand/` — the same set render.sh draws.
+ * A job whose source doesn't exist is skipped, so the SOCIAL ones cost nothing without --social.
+ */
+export const RENDERS: Array<[string, string, number, number]> = [
 	['banner.svg', 'banner.png', 1280, 320],
 	['banner-mobile.svg', 'banner-mobile.png', 1280, 786],
 	['social-card.svg', 'social-card.png', 1280, 640],
 	['favicon.svg', 'favicon-512.png', 512, 512],
 	['favicon.svg', 'favicon.ico', 32, 32],
+	...SOCIAL.map(([stem, w, h]): [string, string, number, number] => [
+		`${stem}.svg`,
+		`${stem}.png`,
+		w,
+		h,
+	]),
 ]
 
 /** Classic favicon sizes packed into favicon.ico. */

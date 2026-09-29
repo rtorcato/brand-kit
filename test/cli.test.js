@@ -1,7 +1,7 @@
 // End-to-end: run the built CLI against a throwaway repo.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
@@ -56,6 +56,18 @@ test('a repo with a docs site gets the favicon copied into static/img', () => {
 	mkdirSync(join(dir, 'apps/docs'), { recursive: true })
 	const { written } = JSON.parse(run(dir, '--json').stdout)
 	assert.ok(written.includes('apps/docs/static/img/favicon.svg'))
+})
+
+test('--social writes the social canvases and render.sh lists them; plain init does not', () => {
+	const plain = repo()
+	run(plain)
+	assert.ok(!existsSync(join(plain, 'brand/instagram-post.svg')))
+	const dir = repo()
+	run(dir, '--social')
+	for (const stem of ['avatar', 'instagram-post', 'story', 'x-header', 'youtube-banner']) {
+		assert.ok(existsSync(join(dir, `brand/${stem}.svg`)), stem)
+	}
+	assert.match(readFileSync(join(dir, 'brand/render.sh'), 'utf8'), /^social story 1080 1920$/m)
 })
 
 test('a bad --accent is rejected', () => {
