@@ -575,8 +575,13 @@ export async function syncBrandToDocs(targetDir: string): Promise<string[]> {
 	return written
 }
 
-export const BANNER_START = '<!-- js-tooling:banner:start -->'
-export const BANNER_END = '<!-- js-tooling:banner:end -->'
+export const BANNER_START = '<!-- brand-kit:banner:start -->'
+export const BANNER_END = '<!-- brand-kit:banner:end -->'
+/** Markers written before the split from js-tooling; still recognised, rewritten to the new ones. */
+const LEGACY_MARKERS = [
+	'<!-- js-tooling:banner:start -->',
+	'<!-- js-tooling:banner:end -->',
+] as const
 
 /** The README `<picture>` banner, mobile variant under 640px, as a delimited block. */
 export function buildBannerBlock(name: string): string {
@@ -594,10 +599,12 @@ ${BANNER_END}`
  * hand-written `<picture>`); otherwise prepends. Idempotent.
  */
 export function upsertBanner(readme: string, block: string): string {
-	const start = readme.indexOf(BANNER_START)
-	const end = readme.indexOf(BANNER_END)
-	if (start !== -1 && end > start) {
-		return readme.slice(0, start) + block + readme.slice(end + BANNER_END.length)
+	for (const [open, close] of [[BANNER_START, BANNER_END], LEGACY_MARKERS]) {
+		const start = readme.indexOf(open)
+		const end = readme.indexOf(close)
+		if (start !== -1 && end > start) {
+			return readme.slice(0, start) + block + readme.slice(end + close.length)
+		}
 	}
 	if (/banner(?:-mobile)?\.png/.test(readme)) return readme
 	return `${block}\n\n${readme}`

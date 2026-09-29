@@ -73,3 +73,13 @@ test('--social writes the social canvases and render.sh lists them; plain init d
 test('a bad --accent is rejected', () => {
 	assert.equal(run(repo(), '--accent', 'red').status, 1)
 })
+
+test('upsertBanner writes brand-kit markers and rewrites the old js-tooling ones', async () => {
+	const { upsertBanner, buildBannerBlock } = await import('../dist/brand.js')
+	const block = buildBannerBlock('x')
+	assert.match(block, /<!-- brand-kit:banner:start -->/)
+	const old = '<!-- js-tooling:banner:start -->\nold\n<!-- js-tooling:banner:end -->\n\n# x\n'
+	const next = upsertBanner(old, block)
+	assert.equal(next, `${block}\n\n# x\n`)
+	assert.equal(upsertBanner(next, block), next)
+})
