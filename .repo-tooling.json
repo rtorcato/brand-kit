@@ -1,0 +1,39 @@
+{
+  "$schema": "https://rtorcato.github.io/repo-tooling/schemas/lockfile.json",
+  "version": 4,
+  "record": {
+    "config": {
+      "projectName": "@rtorcato/brand-kit",
+      "language": "js",
+      "projectType": "library",
+      "typescript": {
+        "enabled": true,
+        "config": "base"
+      },
+      "linting": {
+        "tool": "biome",
+        "eslintConfig": "base"
+      },
+      "formatting": {
+        "tool": "biome"
+      },
+      "testing": {
+        "framework": "none",
+        "environment": "node"
+      },
+      "gitHooks": false,
+      "commitLint": false,
+      "semanticRelease": true,
+      "securityAutomation": true,
+      "bundler": "none"
+    },
+    "writtenBy": "@rtorcato/repo-tooling@5.0.0",
+    "writtenAt": "2026-09-29T21:36:20.718Z"
+  },
+  "rules": {
+    "mcp": {
+      "recommended": []
+    },
+    "exceptions": {}
+  }
+}

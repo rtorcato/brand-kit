@@ -1,4 +1,6 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
-  "extends": ["@rtorcato/repo-tooling/biome"]
+  "$schema": "https://biomejs.dev/schemas/latest/schema.json",
+  "extends": [
+    "@rtorcato/repo-tooling/biome"
+  ]
 }
