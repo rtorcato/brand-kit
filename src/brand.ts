@@ -26,6 +26,9 @@ const COUNTER_GLOW = '#6e7bff'
 const INK = '#0A0E16'
 const TEXT = '#e6edf3'
 const MUTED = '#9ba6b8'
+// Fallback stacks: Avenir Next and Menlo are macOS-only, so Linux falls back to these.
+const SANS = "'Avenir Next', Inter, 'Helvetica Neue', Arial, sans-serif"
+const MONO = "Menlo, 'DejaVu Sans Mono', monospace"
 
 export interface BrandMeta {
 	/** Bare project name, e.g. `shared-docs`. */
@@ -173,7 +176,7 @@ export function faviconSvg(meta: BrandMeta): string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
 	<title>${esc(meta.name)}</title>
 	<rect width="32" height="32" rx="8" fill="${meta.accent}"/>
-	<text x="16" y="23" text-anchor="middle" font-family="Avenir Next" font-weight="800" font-size="19" fill="${INK}">${initial}</text>
+	<text x="16" y="23" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="19" fill="${INK}">${initial}</text>
 </svg>
 `
 }
@@ -203,7 +206,7 @@ function taglineBlock(
 		.map((l, i) => `\t\t<tspan x="${opts.x}" y="${opts.y + i * opts.step}">${esc(l)}</tspan>`)
 		.join('\n')
 	const anchor = opts.centred ? ' text-anchor="middle"' : ''
-	return `	<text${anchor} font-family="Avenir Next" font-weight="500" font-size="${opts.size}" fill="${MUTED}">
+	return `	<text${anchor} font-family="${SANS}" font-weight="500" font-size="${opts.size}" fill="${MUTED}">
 ${tspans}
 	</text>`
 }
@@ -216,7 +219,7 @@ function installPanel(
 	if (!meta.install) return ''
 	return `
 	<rect x="${opts.x}" y="${opts.y}" width="${opts.w}" height="${opts.h}" rx="14" fill="#11151d" stroke="#232936" stroke-width="1"/>
-	<text xml:space="preserve" x="${opts.x + opts.w / 2}" y="${opts.y + opts.h / 2 + opts.size / 3}" text-anchor="middle" font-family="Menlo" font-size="${opts.size}"><tspan fill="${meta.accent}">npm i </tspan><tspan fill="${TEXT}">${esc(meta.install)}</tspan></text>`
+	<text xml:space="preserve" x="${opts.x + opts.w / 2}" y="${opts.y + opts.h / 2 + opts.size / 3}" text-anchor="middle" font-family="${MONO}" font-size="${opts.size}"><tspan fill="${meta.accent}">npm i </tspan><tspan fill="${TEXT}">${esc(meta.install)}</tspan></text>`
 }
 
 function canvas(meta: BrandMeta, w: number, h: number, glow: { cx: number; cy: number }): string {
@@ -247,7 +250,7 @@ export function bannerSvg(meta: BrandMeta): string {
 	return `${canvas(meta, 1280, 320, { cx: 0.16, cy: 0 })}
 ${mark(60, 88, 72)}
 
-	<text x="156" y="150" font-family="Avenir Next" font-weight="800" font-size="62" letter-spacing="-1.5">${wordmark(meta)}</text>
+	<text x="156" y="150" font-family="${SANS}" font-weight="800" font-size="62" letter-spacing="-1.5">${wordmark(meta)}</text>
 
 ${taglineBlock(meta, { x: 62, y: 198, step: 28, size: 20, centred: false, maxChars: 44 })}
 ${installPanel(meta, { x: 845, y: 118, w: 378, h: 84, size: 20 })}
@@ -260,7 +263,7 @@ export function bannerMobileSvg(meta: BrandMeta): string {
 	return `${canvas(meta, 1280, 786, { cx: 0.12, cy: 0.05 })}
 ${mark(565, 104, 150)}
 
-	<text x="640" y="360" text-anchor="middle" font-family="Avenir Next" font-weight="800" font-size="76" letter-spacing="-1.8">${wordmark(meta)}</text>
+	<text x="640" y="360" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="76" letter-spacing="-1.8">${wordmark(meta)}</text>
 
 ${taglineBlock(meta, { x: 640, y: 510, step: 44, size: 30, centred: true, maxChars: 42 })}
 ${installPanel(meta, { x: 427, y: 650, w: 426, h: 78, size: 24 })}
@@ -272,7 +275,7 @@ ${installPanel(meta, { x: 427, y: 650, w: 426, h: 78, size: 24 })}
 function lockup(meta: BrandMeta): string {
 	return `${mark(590, 120, 100)}
 
-	<text x="640" y="300" text-anchor="middle" font-family="Avenir Next" font-weight="800" font-size="76" letter-spacing="-1.8">${wordmark(meta)}</text>
+	<text x="640" y="300" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="76" letter-spacing="-1.8">${wordmark(meta)}</text>
 
 ${taglineBlock(meta, { x: 640, y: 372, step: 42, size: 28, centred: true, maxChars: 44 })}
 ${installPanel(meta, { x: 427, y: 470, w: 426, h: 78, size: 24 })}`
