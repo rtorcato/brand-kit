@@ -25,6 +25,7 @@ Options:
                     YouTube and Facebook headers
   --json            Machine-readable output on stdout
   --yes, -y         Accepted for parity; the CLI never prompts
+  -v, --version
   -h, --help
 `
 
@@ -90,8 +91,14 @@ async function main(): Promise<number> {
 			json: { type: 'boolean' },
 			yes: { type: 'boolean', short: 'y' },
 			help: { type: 'boolean', short: 'h' },
+			version: { type: 'boolean', short: 'v' },
 		},
 	})
+	if (values.version) {
+		const own = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+		console.log(own.version)
+		return 0
+	}
 	if (values.help) {
 		console.log(HELP)
 		return 0

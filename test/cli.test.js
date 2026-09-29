@@ -73,3 +73,8 @@ test('--social writes the social canvases and render.sh lists them; plain init d
 test('a bad --accent is rejected', () => {
 	assert.equal(run(repo(), '--accent', 'red').status, 1)
 })
+
+test('--version prints the package version', () => {
+	const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+	assert.equal(spawnSync('node', [cli, '--version'], { encoding: 'utf8' }).stdout.trim(), version)
+})
