@@ -78,11 +78,11 @@ test('README repoint moves only root-level banner paths', () => {
 	const dir = repo()
 	writeFileSync(
 		join(dir, 'README.md'),
-		'![a](banner.png) ![b](./banner-mobile.png) ![c](images/banner.png) my-banner.png ![d](./brand/banner.png)\n',
+		'![a](banner.png) ![b](./banner-mobile.png) ![c](images/banner.png) my-banner.png ![d](./brand/banner.png)\n'
 	)
 	run(dir)
 	assert.equal(
 		readFileSync(join(dir, 'README.md'), 'utf8'),
-		'![a](./brand/banner.png) ![b](./brand/banner-mobile.png) ![c](images/banner.png) my-banner.png ![d](./brand/banner.png)\n',
+		'![a](./brand/banner.png) ![b](./brand/banner-mobile.png) ![c](images/banner.png) my-banner.png ![d](./brand/banner.png)\n'
 	)
 })
