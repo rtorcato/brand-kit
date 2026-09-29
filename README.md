@@ -17,6 +17,9 @@ npx @rtorcato/brand-kit doctor                            # report drift
 
 Rendering needs `rsvg-convert` (`brew install librsvg`, apt:
 `apt-get install librsvg2-bin`). Without it the SVG sources are still written.
+Renders are only pixel-stable on the machine that produced them: the templates
+prefer Avenir Next and Menlo (macOS) and fall back to Inter, Helvetica Neue,
+Arial or DejaVu Sans Mono, whichever fontconfig finds.
 
 ## What you get
 
