@@ -13,6 +13,7 @@ npx @rtorcato/brand-kit --tagline "New line" --update     # rewrite changed sour
 npx @rtorcato/brand-kit --social                          # add Instagram, X, LinkedIn, … images
 npx @rtorcato/brand-kit render                            # re-render stale PNGs
 npx @rtorcato/brand-kit doctor                            # report drift
+npx @rtorcato/brand-kit doctor --strict                   # CI: exit 1 on warnings too
 ```
 
 Rendering needs `rsvg-convert` (`brew install librsvg`, apt:
