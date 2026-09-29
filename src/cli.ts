@@ -14,7 +14,7 @@ Commands:
            rsvg-convert is installed, add the README banner
   render   Re-render stale PNGs and favicon.ico from brand/*.svg
   doctor   Report missing sources, stale PNGs and a README without the banner
-           (exit 1 when a source is missing)
+           (exit 1 when a source is missing; with --strict, on any warning too)
 
 Options:
   --dir <path>      Target repo (default: cwd)
@@ -23,8 +23,10 @@ Options:
   --update          init: rewrite generated sources that differ (never favicon.svg)
   --social          init: also write avatar, Instagram post, story, and X, LinkedIn,
                     YouTube and Facebook headers
+  --strict          doctor: exit 1 on warnings (stale renders, bannerless README) too
   --json            Machine-readable output on stdout
   --yes, -y         Accepted for parity; the CLI never prompts
+  -v, --version
   -h, --help
 `
 
@@ -87,11 +89,18 @@ async function main(): Promise<number> {
 			accent: { type: 'string' },
 			update: { type: 'boolean' },
 			social: { type: 'boolean' },
+			strict: { type: 'boolean' },
 			json: { type: 'boolean' },
 			yes: { type: 'boolean', short: 'y' },
 			help: { type: 'boolean', short: 'h' },
+			version: { type: 'boolean', short: 'v' },
 		},
 	})
+	if (values.version) {
+		const own = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+		console.log(own.version)
+		return 0
+	}
 	if (values.help) {
 		console.log(HELP)
 		return 0
@@ -144,7 +153,9 @@ async function main(): Promise<number> {
 	}
 	if (command === 'doctor') {
 		const checks = await doctor(dir)
-		const failed = checks.filter((c) => c.status === 'fail').length
+		const failed = checks.filter(
+			(c) => c.status === 'fail' || (values.strict && c.status === 'warn')
+		).length
 		report(
 			{ ok: failed === 0, checks },
 			checks

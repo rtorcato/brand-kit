@@ -13,10 +13,14 @@ npx @rtorcato/brand-kit --tagline "New line" --update     # rewrite changed sour
 npx @rtorcato/brand-kit --social                          # add Instagram, X, LinkedIn, … images
 npx @rtorcato/brand-kit render                            # re-render stale PNGs
 npx @rtorcato/brand-kit doctor                            # report drift
+npx @rtorcato/brand-kit doctor --strict                   # CI: exit 1 on warnings too
 ```
 
 Rendering needs `rsvg-convert` (`brew install librsvg`, apt:
 `apt-get install librsvg2-bin`). Without it the SVG sources are still written.
+Renders are only pixel-stable on the machine that produced them: the templates
+prefer Avenir Next and Menlo (macOS) and fall back to Inter, Helvetica Neue,
+Arial or DejaVu Sans Mono, whichever fontconfig finds.
 
 ## What you get
 

@@ -51,6 +51,16 @@ test('doctor fails without sources, passes after init; --json is parseable', () 
 	assert.ok(JSON.parse(res.stdout).checks.every((c) => c.status !== 'fail'))
 })
 
+test('doctor --strict fails on a warning', () => {
+	const dir = repo()
+	run(dir)
+	writeFileSync(join(dir, 'README.md'), '# no banner\n')
+	assert.equal(run(dir, 'doctor').status, 0)
+	const res = run(dir, 'doctor', '--strict', '--json')
+	assert.equal(res.status, 1)
+	assert.equal(JSON.parse(res.stdout).ok, false)
+})
+
 test('a repo with a docs site gets the favicon copied into static/img', () => {
 	const dir = repo()
 	mkdirSync(join(dir, 'apps/docs'), { recursive: true })
@@ -85,4 +95,9 @@ test('README repoint moves only root-level banner paths', () => {
 		readFileSync(join(dir, 'README.md'), 'utf8'),
 		'![a](./brand/banner.png) ![b](./brand/banner-mobile.png) ![c](images/banner.png) my-banner.png ![d](./brand/banner.png)\n'
 	)
+})
+
+test('--version prints the package version', () => {
+	const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+	assert.equal(spawnSync('node', [cli, '--version'], { encoding: 'utf8' }).stdout.trim(), version)
 })
