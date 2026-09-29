@@ -16,8 +16,8 @@ importers:
         specifier: ^2.5.7
         version: 2.5.14
       '@rtorcato/repo-tooling':
-        specifier: ^3.1.0
-        version: 3.45.0(@biomejs/biome@2.5.14)(@semantic-release/commit-analyzer@13.0.1(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/github@12.0.10(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/npm@13.2.0(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/release-notes-generator@14.1.1(semantic-release@25.0.9(typescript@7.0.2)))(@types/node@22.20.4)(semantic-release@25.0.9(typescript@7.0.2))(typescript@7.0.2)
+        specifier: ^4.2.0
+        version: 4.2.0(@biomejs/biome@2.5.14)(@semantic-release/commit-analyzer@13.0.1(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/github@12.0.10(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/npm@13.2.0(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/release-notes-generator@14.1.1(semantic-release@25.0.9(typescript@7.0.2)))(@types/node@22.20.4)(semantic-release@25.0.9(typescript@7.0.2))(typescript@7.0.2)
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.4
@@ -318,8 +318,8 @@ packages:
     resolution: {integrity: sha512-4EDEmvxWtgsCnnVeBvtFIFZtUhPPt1+bA9JrSwU4Sa//6oKtzCSlGGXYJr44OD9aGISymbieJ4mCKHUygUDU+g==}
     engines: {node: '>=18'}
 
-  '@rtorcato/repo-tooling@3.45.0':
-    resolution: {integrity: sha512-9ijVz5+o2Ms4+qPXjAaOD7vybnv50TpYaGUf3aG3YSPzBs43b7r46B5Dt3RDTKMkgkalLpkQdByvB0gaIYcj5Q==}
+  '@rtorcato/repo-tooling@4.2.0':
+    resolution: {integrity: sha512-XOo+kInZlwCVUTUYI0YXeLfkzqCu8wX3XWt2s3jY+tpmO2hrRyG+awaIqmoaVGaPJS26RIfTBf5yH8NsSytbYw==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -680,8 +680,8 @@ packages:
     resolution: {integrity: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
 
-  chalk@6.0.1:
-    resolution: {integrity: sha512-/Ce6KNm3vIbWdMlNna6RVIZ/ICQxnJxCicet5LBKK9ZffBkqzDw0xh9EiKSljdRtiIQ1S1z4YgcscUUGzNCWrA==}
+  chalk@6.0.0:
+    resolution: {integrity: sha512-2uNTXIuTTxk7ciZgAU1BQcgnchcG0xXnrs6jzkQfj9SsRa9M2s5zE8WT96hS6KmG4MzWHSrvH43DF1m4XRkrFg==}
     engines: {node: '>=22'}
 
   char-regex@1.0.2:
@@ -2016,9 +2016,9 @@ snapshots:
     dependencies:
       tinyexec: 1.3.1
 
-  '@rtorcato/repo-tooling@3.45.0(@biomejs/biome@2.5.14)(@semantic-release/commit-analyzer@13.0.1(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/github@12.0.10(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/npm@13.2.0(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/release-notes-generator@14.1.1(semantic-release@25.0.9(typescript@7.0.2)))(@types/node@22.20.4)(semantic-release@25.0.9(typescript@7.0.2))(typescript@7.0.2)':
+  '@rtorcato/repo-tooling@4.2.0(@biomejs/biome@2.5.14)(@semantic-release/commit-analyzer@13.0.1(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/github@12.0.10(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/npm@13.2.0(semantic-release@25.0.9(typescript@7.0.2)))(@semantic-release/release-notes-generator@14.1.1(semantic-release@25.0.9(typescript@7.0.2)))(@types/node@22.20.4)(semantic-release@25.0.9(typescript@7.0.2))(typescript@7.0.2)':
     dependencies:
-      chalk: 6.0.1
+      chalk: 6.0.0
       commander: 15.0.0
       diff: 9.0.0
       fs-extra: 11.4.1
@@ -2242,7 +2242,7 @@ snapshots:
 
   chalk@5.6.2: {}
 
-  chalk@6.0.1: {}
+  chalk@6.0.0: {}
 
   char-regex@1.0.2: {}
 
