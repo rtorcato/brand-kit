@@ -4,7 +4,14 @@
 	"description": "Banner, social card and favicon for a repo — SVG sources you can regenerate, rendered to PNG.",
 	"type": "module",
 	"packageManager": "pnpm@11.9.0",
-	"keywords": ["brand", "banner", "social-card", "favicon", "readme", "rtorcato"],
+	"keywords": [
+		"brand",
+		"banner",
+		"social-card",
+		"favicon",
+		"readme",
+		"rtorcato"
+	],
 	"author": "Richard Torcato",
 	"license": "MIT",
 	"repository": {
@@ -16,9 +23,11 @@
 		"url": "https://github.com/rtorcato/brand-kit/issues"
 	},
 	"bin": {
-		"brand-kit": "./dist/cli.js"
+		"brand-kit": "dist/cli.js"
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
 		"prepack": "pnpm build",
