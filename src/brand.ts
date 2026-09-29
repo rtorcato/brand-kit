@@ -351,7 +351,7 @@ export const SOCIAL: SocialCanvas[] = [
 export const RENDER_SH = `#!/usr/bin/env bash
 # Render the committed brand PNGs from their SVG sources.
 # Sizes come from the brand-asset spec: 1280x320 banner, 1280x786 mobile,
-# 1280x640 social card, 512x512 PWA icon. (\`brand-kit\` also packs favicon.ico.)
+# 1280x640 social card, 512x512 PWA icon, favicon.ico.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -367,15 +367,24 @@ rsvg-convert -w 1280 -h 640 brand/social-card.svg   -o brand/social-card.png
 rsvg-convert -w 512  -h 512 brand/favicon.svg       -o brand/favicon-512.png
 echo "rendered: brand/banner.png brand/banner-mobile.png brand/social-card.png brand/favicon-512.png"
 
-# The docs-site assets, rendered only when the site exists to hold them.
+# favicon.ico: the 16 and 32 sizes, packed with ImageMagick when present.
+if command -v magick >/dev/null 2>&1; then
+	magick -background none brand/favicon.svg -define icon:auto-resize=16,32 brand/favicon.ico
+	echo "rendered: brand/favicon.ico"
+else
+	echo "skipped brand/favicon.ico: needs ImageMagick (\`magick\`) or \`npx @rtorcato/brand-kit render\`" >&2
+fi
+
+# The docs site gets copies (never overwritten), like \`brand-kit\`'s docs sync.
 img=apps/docs/static/img
-if [ -d "$img" ]; then
-	rsvg-convert -w 1280 -h 640 brand/social-card.svg -o "$img/social-card.png"
-	echo "rendered: $img/social-card.png"
-	if [ -f "$img/favicon.svg" ]; then
-		rsvg-convert -w 512 -h 512 "$img/favicon.svg" -o "$img/favicon-512.png"
-		echo "rendered: $img/favicon-512.png"
-	fi
+if [ -d apps/docs ]; then
+	mkdir -p "$img"
+	for f in favicon.svg favicon.ico social-card.png; do
+		if [ -f "brand/$f" ] && [ ! -e "$img/$f" ]; then
+			cp "brand/$f" "$img/$f"
+			echo "copied: $img/$f"
+		fi
+	done
 fi
 
 # The --social canvases, each rendered only when its source exists.
