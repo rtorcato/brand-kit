@@ -51,6 +51,16 @@ test('doctor fails without sources, passes after init; --json is parseable', () 
 	assert.ok(JSON.parse(res.stdout).checks.every((c) => c.status !== 'fail'))
 })
 
+test('doctor --strict fails on a warning', () => {
+	const dir = repo()
+	run(dir)
+	writeFileSync(join(dir, 'README.md'), '# no banner\n')
+	assert.equal(run(dir, 'doctor').status, 0)
+	const res = run(dir, 'doctor', '--strict', '--json')
+	assert.equal(res.status, 1)
+	assert.equal(JSON.parse(res.stdout).ok, false)
+})
+
 test('a repo with a docs site gets the favicon copied into static/img', () => {
 	const dir = repo()
 	mkdirSync(join(dir, 'apps/docs'), { recursive: true })
@@ -82,4 +92,9 @@ test('upsertBanner writes brand-kit markers and rewrites the old js-tooling ones
 	const next = upsertBanner(old, block)
 	assert.equal(next, `${block}\n\n# x\n`)
 	assert.equal(upsertBanner(next, block), next)
+})
+
+test('--version prints the package version', () => {
+	const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+	assert.equal(spawnSync('node', [cli, '--version'], { encoding: 'utf8' }).stdout.trim(), version)
 })
