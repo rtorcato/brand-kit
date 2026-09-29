@@ -1,0 +1,4 @@
+node_modules
+*.tsbuildinfo
+dist/
+.claude/ai-loop-status

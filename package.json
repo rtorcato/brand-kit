@@ -1,0 +1,47 @@
+{
+	"name": "@rtorcato/brand-kit",
+	"version": "0.0.0-development",
+	"description": "Banner, social card and favicon for a repo — SVG sources you can regenerate, rendered to PNG.",
+	"type": "module",
+	"packageManager": "pnpm@11.9.0",
+	"keywords": ["brand", "banner", "social-card", "favicon", "readme", "rtorcato"],
+	"author": "Richard Torcato",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/rtorcato/brand-kit.git"
+	},
+	"homepage": "https://github.com/rtorcato/brand-kit#readme",
+	"bugs": {
+		"url": "https://github.com/rtorcato/brand-kit/issues"
+	},
+	"bin": {
+		"brand-kit": "./dist/cli.js"
+	},
+	"files": ["dist"],
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"prepack": "pnpm build",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome lint .",
+		"test": "node --test",
+		"publint": "publint --strict"
+	},
+	"dependencies": {
+		"@rtorcato/shared-docs": "^1.10.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.7",
+		"@rtorcato/repo-tooling": "^3.1.0",
+		"@types/node": "^22.0.0",
+		"publint": "^0.3.23",
+		"semantic-release": "^25.0.8",
+		"typescript": "^7.0.2"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}

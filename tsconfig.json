@@ -1,0 +1,18 @@
+{
+	"extends": "@rtorcato/repo-tooling/typescript/node",
+	"compilerOptions": {
+		// The preset only typechecks; this package IS its tsc output.
+		"noEmit": false,
+		"declaration": false,
+		"outDir": "dist",
+		"rootDir": "src",
+		"incremental": false,
+		"sourceMap": false,
+		// Tests use node:test, not the preset's vitest.
+		"types": ["node"],
+		// package.json is read as an index-signature record; `pkg.name` is clearer than `pkg['name']`.
+		"noPropertyAccessFromIndexSignature": false,
+		"verbatimModuleSyntax": true
+	},
+	"include": ["src"]
+}

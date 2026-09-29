@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  # Required for npm trusted publishing (OIDC) — without it GitHub mints no
+  # token for the job and @semantic-release/npm falls back to NPM_TOKEN.
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          # semantic-release pushes the version bump and tag to main, and
+          # GITHUB_TOKEN cannot push to a protected branch. RELEASE_TOKEN (an
+          # admin PAT) is what makes that work once main is protected; the
+          # fallback keeps releases green until the secret exists.
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+      # OIDC trusted publishing is done by the npm CLI, not by semantic-release
+      # itself — and it needs npm >= 11.5.1. Node 22 ships npm 10.x, which
+      # ignores the OIDC credentials semantic-release already exchanged and
+      # fails the upload with ENEEDAUTH. Same fix api-common carries.
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@latest
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # No NPM_TOKEN: auth comes from the OIDC trusted publisher configured for
+      # this package on npmjs.com. Setting it would send @semantic-release/npm
+      # down the token path and fail verification if the token has expired.
+      - run: pnpm exec semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
