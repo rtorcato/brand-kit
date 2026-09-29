@@ -2,7 +2,7 @@
 import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
-import { addReadmeBanner, generateBrand, renderBrand, syncBrandToDocs } from './brand.js'
+import { addReadmeBanner, generateBrand, RENDERS, renderBrand, syncBrandToDocs } from './brand.js'
 import { exists, read } from './fs.js'
 
 const HELP = `brand-kit — banner, social card and favicon for a repo
@@ -21,6 +21,8 @@ Options:
   --tagline <text>  Banner tagline (default: family entry, else package.json description)
   --accent <hex>    Accent colour (default: family entry, docs theme, favicon, else grey)
   --update          init: rewrite generated sources that differ (never favicon.svg)
+  --social          init: also write avatar, Instagram post, story, and X, LinkedIn,
+                    YouTube and Facebook headers
   --json            Machine-readable output on stdout
   --yes, -y         Accepted for parity; the CLI never prompts
   -h, --help
@@ -28,14 +30,6 @@ Options:
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 const SOURCES = ['favicon.svg', 'banner.svg', 'banner-mobile.svg', 'social-card.svg', 'render.sh']
-/** `[png, svg]` — the rendered outputs doctor checks for staleness. */
-const OUTPUTS: Array<[string, string]> = [
-	['banner.png', 'banner.svg'],
-	['banner-mobile.png', 'banner-mobile.svg'],
-	['social-card.png', 'social-card.svg'],
-	['favicon-512.png', 'favicon.svg'],
-	['favicon.ico', 'favicon.svg'],
-]
 
 type Check = { check: string; status: 'ok' | 'warn' | 'fail'; detail?: string }
 
@@ -51,7 +45,7 @@ async function doctor(dir: string): Promise<Check[]> {
 				: { check: `brand/${f}`, status: 'fail', detail: 'missing — run `brand-kit`' }
 		)
 	}
-	for (const [out, src] of OUTPUTS) {
+	for (const [src, out] of RENDERS) {
 		if (!(await exists(at(src)))) continue
 		const newest = Math.max(await mtime(at(src)), await mtime(at('favicon.svg')).catch(() => 0))
 		const detail = !(await exists(at(out)))
@@ -92,6 +86,7 @@ async function main(): Promise<number> {
 			tagline: { type: 'string' },
 			accent: { type: 'string' },
 			update: { type: 'boolean' },
+			social: { type: 'boolean' },
 			json: { type: 'boolean' },
 			yes: { type: 'boolean', short: 'y' },
 			help: { type: 'boolean', short: 'h' },
@@ -138,6 +133,7 @@ async function main(): Promise<number> {
 			tagline: values.tagline,
 			accent: values.accent,
 			update: values.update,
+			social: values.social,
 		})
 		wrote([...written, ...(await finish())])
 		return 0

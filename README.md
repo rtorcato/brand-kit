@@ -10,6 +10,7 @@ Works in any repo, with or without a docs site. No install needed:
 npx @rtorcato/brand-kit                                   # init: brand/ + render + README banner
 npx @rtorcato/brand-kit --tagline "Short line" --accent "#e879f9"
 npx @rtorcato/brand-kit --tagline "New line" --update     # rewrite changed sources
+npx @rtorcato/brand-kit --social                          # add Instagram, X, LinkedIn, … images
 npx @rtorcato/brand-kit render                            # re-render stale PNGs
 npx @rtorcato/brand-kit doctor                            # report drift
 ```
@@ -27,6 +28,22 @@ Rendering needs `rsvg-convert` (`brew install librsvg`, apt:
 | `brand/favicon-512.png`, `brand/favicon.ico` | 512×512 icon, 16+32px ico |
 
 `brand/render.sh` re-renders them without Node.
+
+The social card is the `og:image` link preview on X, LinkedIn, Facebook, Slack
+and Discord. For images you post or upload to a profile, add `--social`:
+
+| File | Size | For |
+|---|---|---|
+| `brand/avatar.png` | 400×400 | Profile picture; survives a circular crop |
+| `brand/instagram-post.png` | 1080×1080 | Instagram feed post |
+| `brand/story.png` | 1080×1920 | Instagram, TikTok and Facebook stories |
+| `brand/x-header.png` | 1500×500 | X profile header |
+| `brand/linkedin-banner.png` | 1584×396 | LinkedIn background |
+| `brand/youtube-banner.png` | 2560×1440 | YouTube channel art (content in the 1546×423 safe area) |
+| `brand/facebook-cover.png` | 1640×624 | Facebook cover |
+
+Once a social source exists, `render`, `render.sh`, `doctor` and `--update`
+keep it current without the flag.
 
 ## Where the name, tagline and accent come from
 
