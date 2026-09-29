@@ -73,3 +73,16 @@ test('--social writes the social canvases and render.sh lists them; plain init d
 test('a bad --accent is rejected', () => {
 	assert.equal(run(repo(), '--accent', 'red').status, 1)
 })
+
+test('README repoint moves only root-level banner paths', () => {
+	const dir = repo()
+	writeFileSync(
+		join(dir, 'README.md'),
+		'![a](banner.png) ![b](./banner-mobile.png) ![c](images/banner.png) my-banner.png ![d](./brand/banner.png)\n',
+	)
+	run(dir)
+	assert.equal(
+		readFileSync(join(dir, 'README.md'), 'utf8'),
+		'![a](./brand/banner.png) ![b](./brand/banner-mobile.png) ![c](images/banner.png) my-banner.png ![d](./brand/banner.png)\n',
+	)
+})

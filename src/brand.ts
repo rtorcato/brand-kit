@@ -387,14 +387,14 @@ ${SOCIAL.map(([stem, w, h]) => `social ${stem} ${w} ${h}`).join('\n')}
 
 /**
  * Repoint a README still using the pre-amendment root-level banner paths at
- * `brand/`. Only the two banner `srcset`/`src` values move — nothing else in the
- * README is touched.
+ * `brand/`. Only bare or `./` root-level banner paths move — `images/banner.png`,
+ * `my-banner.png` and anything else in the README is left alone.
  */
 export async function repointReadmeBanners(targetDir: string): Promise<string | null> {
 	const file = path.join(targetDir, 'README.md')
 	if (!(await exists(file))) return null
 	const readme = await read(file)
-	const next = readme.replace(/(?<!brand\/)(?:\.\/)?(banner(?:-mobile)?\.png)/g, './brand/$1')
+	const next = readme.replace(/(?<![\w/.-])(?:\.\/)?(banner(?:-mobile)?\.png)/g, './brand/$1')
 	if (next === readme) return null
 	await writeFile(file, next)
 	return 'README.md'
