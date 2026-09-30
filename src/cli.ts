@@ -12,6 +12,7 @@ import {
 	RENDERS,
 	renderBrand,
 	resolveBrandMeta,
+	DOCS_ASSETS,
 	SOCIAL,
 	socialCardSvg,
 	staleRenders,
@@ -108,6 +109,20 @@ async function doctor(
 				: { check: `brand/${out}`, status: 'ok' }
 		)
 	}
+	if (await exists(path.join(dir, 'apps', 'docs'))) {
+		for (const f of DOCS_ASSETS) {
+			const src = at(f)
+			const copy = path.join(dir, 'apps', 'docs', 'static', 'img', f)
+			if (!(await exists(src)) || !(await exists(copy))) continue
+			if (!(await readFile(src)).equals(await readFile(copy))) {
+				checks.push({
+					check: `apps/docs/static/img/${f}`,
+					status: 'warn',
+					detail: 'differs from brand/ — run `brand-kit`',
+				})
+			}
+		}
+	}
 	const readme = path.join(dir, 'README.md')
 	if (await exists(readme)) {
 		checks.push(
@@ -180,13 +195,13 @@ async function main(): Promise<number> {
 				: 'nothing to write — brand/ is up to date'
 		)
 	// Render, then the README banner (it needs banner.png), then the docs-site copies.
-	const finish = async (replaceDocsCopies = false): Promise<string[]> => {
+	const finish = async (): Promise<string[]> => {
 		const rendered = (await renderBrand(dir)) ?? []
 		const banner = await addReadmeBanner(dir, name)
 		return [
 			...rendered,
 			...(banner ? [banner] : []),
-			...(await syncBrandToDocs(dir, replaceDocsCopies)),
+			...(await syncBrandToDocs(dir)),
 		]
 	}
 
@@ -216,7 +231,7 @@ async function main(): Promise<number> {
 		}
 		// New artwork changes every canvas, so rewrite them as --update would.
 		const written = await generateBrand(pkg, dir, { ...opts, update: values.update || values.ai })
-		wrote([...art, ...written, ...(await finish(values.ai))])
+		wrote([...art, ...written, ...(await finish())])
 		return 0
 	}
 	if (command === 'render') {

@@ -118,6 +118,18 @@ test('--version prints the package version', () => {
 	assert.equal(spawnSync('node', [cli, '--version'], { encoding: 'utf8' }).stdout.trim(), version)
 })
 
+test('a changed brand file refreshes its docs copy, and doctor warns while they differ', () => {
+	const dir = repo()
+	mkdirSync(join(dir, 'apps/docs'), { recursive: true })
+	run(dir)
+	const copy = join(dir, 'apps/docs/static/img/favicon.svg')
+	writeFileSync(copy, 'stale')
+	const doc = JSON.parse(run(dir, 'doctor', '--json').stdout)
+	assert.ok(JSON.stringify(doc).includes('apps/docs/static/img/favicon.svg'))
+	run(dir)
+	assert.equal(readFileSync(copy, 'utf8'), readFileSync(join(dir, 'brand/favicon.svg'), 'utf8'))
+})
+
 test('render staleness follows content, not mtimes', { skip: spawnSync('rsvg-convert', ['--version']).error }, () => {
 	const dir = repo()
 	run(dir, '--tagline', 'Short tagline')

@@ -628,18 +628,18 @@ export const DOCS_ASSETS = ['favicon.svg', 'favicon.ico', 'social-card.png']
 
 /**
  * Copy the brand favicon and social card into the docs site's `static/img`
- * Copy-if-missing, and a no-op without `apps/docs`, so `brand` and
- * `init` reach the same tree in either order — each calls it. `replace`
- * overwrites the copies, for when the brand itself was just regenerated.
+ * Copies when the destination is missing or its bytes differ from `brand/`, and is a
+ * no-op without `apps/docs`, so `brand` and `init` reach the same tree in either order.
  */
-export async function syncBrandToDocs(targetDir: string, replace = false): Promise<string[]> {
+export async function syncBrandToDocs(targetDir: string): Promise<string[]> {
 	if (!(await exists(path.join(targetDir, 'apps', 'docs')))) return []
 	const img = path.join('apps', 'docs', 'static', 'img')
 	const written: string[] = []
 	for (const name of DOCS_ASSETS) {
 		const src = path.join(targetDir, 'brand', name)
 		const dest = path.join(targetDir, img, name)
-		if (!(await exists(src)) || (!replace && (await exists(dest)))) continue
+		if (!(await exists(src))) continue
+		if ((await exists(dest)) && (await readFile(src)).equals(await readFile(dest))) continue
 		await mkdir(path.dirname(dest), { recursive: true })
 		await copyFile(src, dest)
 		written.push(path.join(img, name))
