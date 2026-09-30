@@ -2,3 +2,6 @@ node_modules
 *.tsbuildinfo
 dist/
 .claude/ai-loop-status
+apps/docs/build/
+apps/docs/.docusaurus/
+apps/docs/docs/changelog.md

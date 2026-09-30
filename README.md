@@ -1,3 +1,10 @@
+<!-- js-tooling:banner:start -->
+<picture>
+  <source media="(max-width: 640px)" srcset="./brand/banner-mobile.png">
+  <img src="./brand/banner.png" alt="brand-kit banner" width="1600">
+</picture>
+<!-- js-tooling:banner:end -->
+
 # @rtorcato/brand-kit
 
 Banner, mobile banner, social card and favicon for a repo, generated as SVG
@@ -16,7 +23,7 @@ npx @rtorcato/brand-kit doctor                            # report drift
 npx @rtorcato/brand-kit doctor --strict                   # CI: exit 1 on warnings too
 ```
 
-See [`examples/`](examples) for real output from each mode.
+Full docs: [docs.torcato.dev/brand-kit](https://docs.torcato.dev/brand-kit/). See [`examples/`](examples) for real output from each mode.
 
 Rendering needs `rsvg-convert` (`brew install librsvg`, apt:
 `apt-get install librsvg2-bin`). Without it the SVG sources are still written.

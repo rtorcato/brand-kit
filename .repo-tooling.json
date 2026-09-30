@@ -25,7 +25,11 @@
       "commitLint": false,
       "semanticRelease": true,
       "securityAutomation": true,
-      "bundler": "none"
+      "bundler": "none",
+      "docs": {
+        "url": "https://docs.torcato.dev/brand-kit/",
+        "deploy": "cloudflare"
+      }
     },
     "writtenBy": "@rtorcato/repo-tooling@5.0.1",
     "writtenAt": "2026-09-29T21:36:20.718Z"
