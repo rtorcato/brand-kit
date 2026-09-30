@@ -44,6 +44,8 @@ social() {
 		echo "rendered: brand/$1.png"
 	fi
 }
+social banner-light 1280 320
+social banner-mobile-light 1280 786
 social avatar 400 400
 social instagram-post 1080 1080
 social story 1080 1920

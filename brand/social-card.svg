@@ -15,6 +15,9 @@
 	</defs>
 
 	<rect width="1280" height="640" fill="url(#bg)"/>
+	<!-- Artwork: brand/background.png, cropped to fill, washed dark so the text stays readable. -->
+	<image href="background.png" width="1280" height="640" preserveAspectRatio="xMidYMid slice"/>
+	<rect width="1280" height="640" fill="#0d1117" fill-opacity="0.55"/>
 	<rect width="1280" height="640" fill="url(#glow)"/>
 	<rect width="1280" height="640" fill="url(#glow2)"/>
 
