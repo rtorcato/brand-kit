@@ -12,8 +12,9 @@ a docs site can use it.
 
 ## Release
 
-Automatic: semantic-release on every push to `main`. `feat:` is a minor
-release, `fix:` a patch, and `chore:`/`docs:`/`ci:` release nothing. `version`
+semantic-release runs on every push to `main`, but the `release` environment
+has required reviewers, so each run waits for manual approval before it
+publishes. `feat:` is a minor release, `fix:` a patch, and `chore:`/`docs:`/`ci:` release nothing. `version`
 in `package.json` is a placeholder; npm and the git tags are the record.
 
 ## Boundaries
