@@ -115,6 +115,44 @@ export const PROVIDERS: Record<string, Provider> = {
 				return Buffer.from(part.inlineData.data, 'base64')
 			},
 	},
+	// Async like Higgsfield: submit, then poll the generation. A UUID model is a
+	// v1 modelId (Phoenix 1.0 by default); a name like "gpt-image-1.5" goes to v2.
+	// https://docs.leonardo.ai/reference/creategeneration
+	leonardo: {
+		keys: 'LEONARDO_API_KEY',
+		key: (env) => env.LEONARDO_API_KEY,
+		make:
+			(key, model = 'de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3') =>
+			async (prompt, aspect) => {
+				const api = 'https://cloud.leonardo.ai/api/rest'
+				const headers = { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }
+				const [width, height] = aspect === '1:1' ? [1024, 1024] : [1536, 864]
+				const v1 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(model)
+				const body = v1
+					? { modelId: model, prompt, width, height, num_images: 1 }
+					: { model, public: false, parameters: { prompt, width, height, quantity: 1 } }
+				const res = await json(
+					await fetch(`${api}/${v1 ? 'v1' : 'v2'}/generations`, {
+						method: 'POST',
+						headers,
+						body: JSON.stringify(body),
+					}),
+					'leonardo'
+				)
+				const id = (res.sdGenerationJob ?? res.generate)?.generationId
+				if (!id) throw new Error('leonardo: no generation id in the response')
+				let gen: Record<string, any> = { status: 'PENDING' }
+				// ponytail: same fixed 3s poll, 5 min cap as higgsfield.
+				for (let i = 0; i < 100 && !['COMPLETE', 'FAILED'].includes(gen.status); i++) {
+					await new Promise((r) => setTimeout(r, 3000))
+					gen = (await json(await fetch(`${api}/v1/generations/${id}`, { headers }), 'leonardo'))
+						.generations_by_pk ?? { status: 'PENDING' }
+				}
+				const url = gen.generated_images?.[0]?.url
+				if (gen.status !== 'COMPLETE' || !url) throw new Error(`leonardo: generation ${gen.status}`)
+				return Buffer.from(await (await fetch(url)).arrayBuffer())
+			},
+	},
 }
 
 /** The named provider, else the first whose key is set. */
