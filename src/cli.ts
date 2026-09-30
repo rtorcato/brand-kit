@@ -1,8 +1,17 @@
 #!/usr/bin/env node
+import { spawnSync } from 'node:child_process'
 import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
-import { addReadmeBanner, generateBrand, RENDERS, renderBrand, syncBrandToDocs } from './brand.js'
+import { generateAiArt, pickProvider } from './ai.js'
+import {
+	addReadmeBanner,
+	generateBrand,
+	RENDERS,
+	renderBrand,
+	resolveBrandMeta,
+	syncBrandToDocs,
+} from './brand.js'
 import { exists, read } from './fs.js'
 
 const HELP = `brand-kit — banner, social card and favicon for a repo
@@ -23,6 +32,14 @@ Options:
   --update          init: rewrite generated sources that differ (never favicon.svg)
   --social          init: also write avatar, Instagram post, story, and X, LinkedIn,
                     YouTube and Facebook headers
+  --ai              init: generate a logo (brand/logo.png, drawn by favicon.svg) and a
+                    canvas background (brand/background.png) with an image API,
+                    replacing both. Uses the first key set: HF_API_KEY_ID +
+                    HF_API_KEY_SECRET (Higgsfield), OPENAI_API_KEY, GEMINI_API_KEY,
+                    from the shell or the repo's .env
+  --ai-provider <p> init: higgsfield, openai or gemini instead of the first key found
+  --ai-model <id>   init: override the provider's default model
+  --ai-prompt <txt> init: style hint added to both prompts, e.g. "neon line art"
   --strict          doctor: exit 1 on warnings (stale renders, bannerless README) too
   --json            Machine-readable output on stdout
   --yes, -y         Accepted for parity; the CLI never prompts
@@ -49,7 +66,11 @@ async function doctor(dir: string): Promise<Check[]> {
 	}
 	for (const [src, out] of RENDERS) {
 		if (!(await exists(at(src)))) continue
-		const newest = Math.max(await mtime(at(src)), await mtime(at('favicon.svg')).catch(() => 0))
+		const newest = Math.max(
+			await mtime(at(src)),
+			await mtime(at('favicon.svg')).catch(() => 0),
+			await mtime(at('background.png')).catch(() => 0)
+		)
 		const detail = !(await exists(at(out)))
 			? 'missing'
 			: (await mtime(at(out))) < newest
@@ -89,6 +110,10 @@ async function main(): Promise<number> {
 			accent: { type: 'string' },
 			update: { type: 'boolean' },
 			social: { type: 'boolean' },
+			ai: { type: 'boolean' },
+			'ai-provider': { type: 'string' },
+			'ai-model': { type: 'string' },
+			'ai-prompt': { type: 'string' },
 			strict: { type: 'boolean' },
 			json: { type: 'boolean' },
 			yes: { type: 'boolean', short: 'y' },
@@ -111,7 +136,8 @@ async function main(): Promise<number> {
 		else console.error(`error: ${message}`)
 		return 1
 	}
-	if (values.accent && !HEX.test(values.accent)) return fail('--accent must be a #rrggbb hex colour')
+	if (values.accent && !HEX.test(values.accent))
+		return fail('--accent must be a #rrggbb hex colour')
 
 	const dir = path.resolve(values.dir ?? '.')
 	const pkgFile = path.join(dir, 'package.json')
@@ -131,20 +157,38 @@ async function main(): Promise<number> {
 				: 'nothing to write — brand/ is up to date'
 		)
 	// Render, then the README banner (it needs banner.png), then the docs-site copies.
-	const finish = async (): Promise<string[]> => {
+	const finish = async (replaceDocsCopies = false): Promise<string[]> => {
 		const rendered = (await renderBrand(dir)) ?? []
 		const banner = await addReadmeBanner(dir, name)
-		return [...rendered, ...(banner ? [banner] : []), ...(await syncBrandToDocs(dir))]
+		return [
+			...rendered,
+			...(banner ? [banner] : []),
+			...(await syncBrandToDocs(dir, replaceDocsCopies)),
+		]
 	}
 
 	if (command === 'init') {
-		const written = await generateBrand(pkg, dir, {
-			tagline: values.tagline,
-			accent: values.accent,
-			update: values.update,
-			social: values.social,
-		})
-		wrote([...written, ...(await finish())])
+		const opts = { tagline: values.tagline, accent: values.accent, social: values.social }
+		const art: string[] = []
+		if (values.ai) {
+			// Shell env wins over .env: loadEnvFile never overwrites a variable already set.
+			const envFile = path.join(dir, '.env')
+			if (await exists(envFile)) {
+				process.loadEnvFile(envFile)
+				if (spawnSync('git', ['check-ignore', '-q', '.env'], { cwd: dir }).status === 1) {
+					console.error(
+						'   warning: .env holds API keys but is not gitignored — add it to .gitignore'
+					)
+				}
+			}
+			const generate = pickProvider(values['ai-provider'], values['ai-model'])
+			const meta = await resolveBrandMeta(pkg, dir, opts)
+			if (!values.json) console.error('generating logo and background…')
+			art.push(...(await generateAiArt(dir, meta, generate, values['ai-prompt'])))
+		}
+		// New artwork changes every canvas, so rewrite them as --update would.
+		const written = await generateBrand(pkg, dir, { ...opts, update: values.update || values.ai })
+		wrote([...art, ...written, ...(await finish(values.ai))])
 		return 0
 	}
 	if (command === 'render') {

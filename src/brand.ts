@@ -37,6 +37,8 @@ export interface BrandMeta {
 	accent: string
 	/** Package name for the `npm i` pill, or null for a repo that publishes nothing. */
 	install: string | null
+	/** True when `brand/background.png` exists; the canvases then draw it under a dark wash. */
+	background?: boolean
 }
 
 /** `"` matters because this output also lands in double-quoted attributes (the `aria-label` below). */
@@ -163,6 +165,7 @@ export async function resolveBrandMeta(
 			opts.tagline || member?.tagline || description || 'Add a short tagline with --tagline.',
 		accent,
 		install: pkgName && pkg?.private !== true ? pkgName : null,
+		background: await exists(path.join(targetDir, 'brand', 'background.png')),
 	}
 }
 
@@ -239,7 +242,14 @@ function canvas(meta: BrandMeta, w: number, h: number, glow: { cx: number; cy: n
 		</radialGradient>
 	</defs>
 
-	<rect width="${w}" height="${h}" fill="url(#bg)"/>
+	<rect width="${w}" height="${h}" fill="url(#bg)"/>${
+		meta.background
+			? `
+	<!-- Artwork: brand/background.png, cropped to fill, washed dark so the text stays readable. -->
+	<image href="background.png" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>
+	<rect width="${w}" height="${h}" fill="#0d1117" fill-opacity="0.55"/>`
+			: ''
+	}
 	<rect width="${w}" height="${h}" fill="url(#glow)"/>
 	<rect width="${w}" height="${h}" fill="url(#glow2)"/>
 `
@@ -523,13 +533,14 @@ async function mtime(file: string): Promise<number> {
 
 /**
  * Render every `brand/` PNG (and favicon.ico) that is missing or older than its
- * source — or than favicon.svg, which every canvas draws. Returns the files
+ * source — or than favicon.svg or background.png, which every canvas draws. Returns the files
  * written, or null when `rsvg-convert` is not on PATH (after printing
  * {@link RSVG_HINT}). Nothing stale means nothing to do and no PATH lookup.
  */
 export async function renderBrand(targetDir: string): Promise<string[] | null> {
 	const brand = path.join(targetDir, 'brand')
 	const favicon = path.join(brand, 'favicon.svg')
+	const background = path.join(brand, 'background.png')
 	const stale: typeof RENDERS = []
 	for (const job of RENDERS) {
 		const [src, out] = job
@@ -538,7 +549,8 @@ export async function renderBrand(targetDir: string): Promise<string[] | null> {
 		if (!(await exists(srcFile))) continue
 		const newest = Math.max(
 			await mtime(srcFile),
-			(await exists(favicon)) ? await mtime(favicon) : 0
+			(await exists(favicon)) ? await mtime(favicon) : 0,
+			(await exists(background)) ? await mtime(background) : 0
 		)
 		if (!(await exists(outFile)) || (await mtime(outFile)) < newest) stale.push(job)
 	}
@@ -570,16 +582,17 @@ export const DOCS_ASSETS = ['favicon.svg', 'favicon.ico', 'social-card.png']
 /**
  * Copy the brand favicon and social card into the docs site's `static/img`
  * Copy-if-missing, and a no-op without `apps/docs`, so `brand` and
- * `init` reach the same tree in either order — each calls it.
+ * `init` reach the same tree in either order — each calls it. `replace`
+ * overwrites the copies, for when the brand itself was just regenerated.
  */
-export async function syncBrandToDocs(targetDir: string): Promise<string[]> {
+export async function syncBrandToDocs(targetDir: string, replace = false): Promise<string[]> {
 	if (!(await exists(path.join(targetDir, 'apps', 'docs')))) return []
 	const img = path.join('apps', 'docs', 'static', 'img')
 	const written: string[] = []
 	for (const name of DOCS_ASSETS) {
 		const src = path.join(targetDir, 'brand', name)
 		const dest = path.join(targetDir, img, name)
-		if (!(await exists(src)) || (await exists(dest))) continue
+		if (!(await exists(src)) || (!replace && (await exists(dest)))) continue
 		await mkdir(path.dirname(dest), { recursive: true })
 		await copyFile(src, dest)
 		written.push(path.join(img, name))
