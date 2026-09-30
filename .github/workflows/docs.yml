@@ -1,0 +1,39 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    # src/** and README.md so a shipped change redeploys, not just edits under apps/docs.
+    paths:
+      - 'apps/docs/**'
+      - 'src/**'
+      - 'README.md'
+      - '.github/workflows/docs.yml'
+  # The changelog page is built from GitHub Releases. A release created with
+  # GITHUB_TOKEN never fires `release: published`, so rebuild once Release
+  # succeeds on main instead.
+  workflow_run:
+    workflows: ['Release']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # https://docs.torcato.dev/brand-kit/
+  cloudflare:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: read
+    # ponytail: @main for the bare-path route fix (254cf33), unreleased as of v5.1.3. Pin to the next tag.
+    uses: rtorcato/repo-tooling/.github/workflows/docs-deploy-cloudflare.yml@main
+    with:
+      build-filter: '@rtorcato/brand-kit-docs'
+      worker-name: brand-kit-docs
+      base-path: /brand-kit/
+      route: docs.torcato.dev/brand-kit/*
+    secrets:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
