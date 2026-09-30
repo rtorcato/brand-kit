@@ -34,7 +34,8 @@ test('a family member gets its accent and tagline from @rtorcato/shared-docs', (
 test('--update rewrites a changed canvas but never favicon.svg', () => {
 	const dir = repo()
 	run(dir, '--tagline', 'Old tagline')
-	const glyph = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="9"/></svg>'
+	const glyph =
+		'<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="9"/></svg>'
 	writeFileSync(join(dir, 'brand/favicon.svg'), glyph)
 	const { written } = JSON.parse(run(dir, '--tagline', 'New tagline', '--update', '--json').stdout)
 	assert.ok(written.includes('brand/banner.svg'))
