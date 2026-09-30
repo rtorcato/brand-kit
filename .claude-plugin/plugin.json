@@ -1,0 +1,12 @@
+{
+  "name": "brand-kit",
+  "description": "Generate and maintain a repo's banner, social card and favicon as SVG sources rendered to PNG. Unversioned: follows the default branch.",
+  "author": {
+    "name": "Richard Torcato",
+    "url": "https://github.com/rtorcato"
+  },
+  "homepage": "https://docs.torcato.dev/brand-kit/",
+  "repository": "https://github.com/rtorcato/brand-kit",
+  "license": "MIT",
+  "keywords": ["branding", "banner", "favicon", "social-card", "claude-code"]
+}

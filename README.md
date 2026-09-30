@@ -31,6 +31,16 @@ Renders are only pixel-stable on the machine that produced them: the templates
 prefer Avenir Next and Menlo (macOS) and fall back to Inter, Helvetica Neue,
 Arial or DejaVu Sans Mono, whichever fontconfig finds.
 
+## Claude Code
+
+```
+/plugin marketplace add rtorcato/brand-kit
+/plugin install brand-kit@brand-kit
+```
+
+Adds a `brand-kit` skill that runs the CLI for you. It is unversioned and
+follows `main`.
+
 ## What you get
 
 | File | Size |
