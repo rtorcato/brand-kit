@@ -6,10 +6,14 @@ import { parseArgs } from 'node:util'
 import { generateAiArt, pickProvider } from './ai.js'
 import {
 	addReadmeBanner,
+	bannerMobileSvg,
+	bannerSvg,
 	generateBrand,
 	RENDERS,
 	renderBrand,
 	resolveBrandMeta,
+	SOCIAL,
+	socialCardSvg,
 	syncBrandToDocs,
 } from './brand.js'
 import { exists, read } from './fs.js'
@@ -22,7 +26,7 @@ Commands:
   init     (default) Write brand/ SVG sources + render.sh, render PNGs when
            rsvg-convert is installed, add the README banner
   render   Re-render stale PNGs and favicon.ico from brand/*.svg
-  doctor   Report missing sources, stale PNGs and a README without the banner
+  doctor   Report missing or drifted sources, stale PNGs and a README without the banner
            (exit 1 when a source is missing; with --strict, on any warning too)
 
 Options:
@@ -52,8 +56,12 @@ const SOURCES = ['favicon.svg', 'banner.svg', 'banner-mobile.svg', 'social-card.
 
 type Check = { check: string; status: 'ok' | 'warn' | 'fail'; detail?: string }
 
-/** Read-only. A missing source fails; a missing or stale render and a bannerless README warn. */
-async function doctor(dir: string): Promise<Check[]> {
+/** Read-only. A missing source fails; a missing or stale render, a drifted source and a bannerless README warn. */
+async function doctor(
+	dir: string,
+	pkg: Record<string, unknown> | null,
+	opts: { tagline?: string; accent?: string }
+): Promise<Check[]> {
 	const at = (rel: string): string => path.join(dir, 'brand', rel)
 	const mtime = async (f: string): Promise<number> => (await stat(f)).mtimeMs
 	const checks: Check[] = []
@@ -63,6 +71,23 @@ async function doctor(dir: string): Promise<Check[]> {
 				? { check: `brand/${f}`, status: 'ok' }
 				: { check: `brand/${f}`, status: 'fail', detail: 'missing — run `brand-kit`' }
 		)
+	}
+	// Regenerate in memory; favicon.svg is skipped because hand edits there are expected.
+	const meta = await resolveBrandMeta(pkg, dir, opts)
+	const canvases: Array<[string, string]> = [
+		['banner.svg', bannerSvg(meta)],
+		['banner-mobile.svg', bannerMobileSvg(meta)],
+		['social-card.svg', socialCardSvg(meta)],
+		...SOCIAL.map(([stem, , , svg]): [string, string] => [`${stem}.svg`, svg(meta)]),
+	]
+	for (const [f, expected] of canvases) {
+		if ((await exists(at(f))) && (await read(at(f))) !== expected) {
+			checks.push({
+				check: `brand/${f}`,
+				status: 'warn',
+				detail: 'differs from the current brand meta — run `brand-kit --update`',
+			})
+		}
 	}
 	for (const [src, out] of RENDERS) {
 		if (!(await exists(at(src)))) continue
@@ -196,7 +221,7 @@ async function main(): Promise<number> {
 		return 0
 	}
 	if (command === 'doctor') {
-		const checks = await doctor(dir)
+		const checks = await doctor(dir, pkg, { tagline: values.tagline, accent: values.accent })
 		const failed = checks.filter(
 			(c) => c.status === 'fail' || (values.strict && c.status === 'warn')
 		).length
