@@ -64,6 +64,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # renderBrand and packIco shell out to rsvg-convert.
+      - run: sudo apt-get update && sudo apt-get install -y librsvg2-bin
       # Tests import dist/, so they need the build even though `build` is a
       # separate job — cheaper than passing artifacts between two short jobs.
       - run: pnpm build
