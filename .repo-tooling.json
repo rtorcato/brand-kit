@@ -1,5 +1,5 @@
 {
-  "$schema": "https://rtorcato.github.io/repo-tooling/schemas/lockfile.json",
+  "$schema": "https://docs.torcato.dev/repo-tooling/schemas/lockfile.json",
   "version": 4,
   "record": {
     "config": {
@@ -25,7 +25,11 @@
       "commitLint": false,
       "semanticRelease": true,
       "securityAutomation": true,
-      "bundler": "none"
+      "bundler": "none",
+      "docs": {
+        "url": "https://docs.torcato.dev/brand-kit/",
+        "deploy": "cloudflare"
+      }
     },
     "writtenBy": "@rtorcato/repo-tooling@5.0.1",
     "writtenAt": "2026-09-29T21:36:20.718Z"

@@ -1,3 +1,6 @@
+packages:
+  - 'apps/*'
+
 minimumReleaseAgeExclude:
   - '@rtorcato/*'
   - '@rtorcato/shared-docs@1.10.0'
@@ -6,3 +9,9 @@ minimumReleaseAgeExclude:
 # Don't re-verify node_modules on every script run — the check costs a
 # second per invocation and CI installs with --frozen-lockfile anyway.
 verifyDepsBeforeRun: false
+
+allowBuilds:
+  core-js: false
+  core-js-pure: false
+  esbuild: true
+  sharp: true
