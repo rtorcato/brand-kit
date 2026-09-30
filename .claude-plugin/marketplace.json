@@ -1,0 +1,15 @@
+{
+  "name": "brand-kit",
+  "description": "Banner, social card and favicon for a repo, generated as regenerable SVG sources.",
+  "owner": {
+    "name": "Richard Torcato",
+    "url": "https://github.com/rtorcato"
+  },
+  "plugins": [
+    {
+      "name": "brand-kit",
+      "source": "./",
+      "description": "One skill, brand-kit, that drives the @rtorcato/brand-kit CLI via npx. Unversioned: tracks main."
+    }
+  ]
+}
