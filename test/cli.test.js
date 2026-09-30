@@ -1,7 +1,7 @@
 // End-to-end: run the built CLI against a throwaway repo.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
@@ -101,4 +101,18 @@ test('README repoint moves only root-level banner paths', () => {
 test('--version prints the package version', () => {
 	const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
 	assert.equal(spawnSync('node', [cli, '--version'], { encoding: 'utf8' }).stdout.trim(), version)
+})
+
+test('render staleness follows content, not mtimes', { skip: spawnSync('rsvg-convert', ['--version']).error }, () => {
+	const dir = repo()
+	run(dir, '--tagline', 'Short tagline')
+	run(dir, 'render')
+	assert.ok(existsSync(join(dir, 'brand/.render.json')))
+	// A fresh clone can leave PNGs older than their SVGs; nothing should re-render.
+	const old = new Date(Date.now() - 86_400_000)
+	utimesSync(join(dir, 'brand/banner.png'), old, old)
+	assert.deepEqual(JSON.parse(run(dir, 'render', '--json').stdout).rendered ?? [], [])
+	writeFileSync(join(dir, 'brand/banner.svg'), `${readFileSync(join(dir, 'brand/banner.svg'), 'utf8')}\n<!-- edit -->`)
+	assert.match(run(dir, 'doctor').stdout, /banner\.png/)
+	assert.ok(run(dir, 'render').stdout.includes('brand/banner.png'))
 })
