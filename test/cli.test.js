@@ -62,6 +62,21 @@ test('doctor --strict fails on a warning', () => {
 	assert.equal(JSON.parse(res.stdout).ok, false)
 })
 
+test('doctor warns when a source drifts from the current brand meta, but not for favicon.svg', () => {
+	const dir = repo()
+	run(dir, '--tagline', 'Old tagline')
+	writeFileSync(join(dir, 'brand/favicon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>')
+	const drift = (args = []) =>
+		JSON.parse(run(dir, 'doctor', '--json', ...args).stdout).checks.filter((c) =>
+			c.detail?.includes('brand-kit --update')
+		)
+	assert.equal(drift(['--tagline', 'Old tagline']).length, 0)
+	assert.deepEqual(
+		drift(['--tagline', 'New tagline']).map((c) => c.check),
+		['brand/banner.svg', 'brand/banner-mobile.svg', 'brand/social-card.svg']
+	)
+})
+
 test('a repo with a docs site gets the favicon copied into static/img', () => {
 	const dir = repo()
 	mkdirSync(join(dir, 'apps/docs'), { recursive: true })
