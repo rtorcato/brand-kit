@@ -1,11 +1,11 @@
 // --ai with fetch mocked: no network, no keys spent.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { generateAiArt, pickProvider } from '../dist/ai.js'
+import { generateAiArt, pickProvider, sanitizeSvg } from '../dist/ai.js'
 import { generateBrand, renderBrand, resolveBrandMeta } from '../dist/brand.js'
 
 const cli = new URL('../dist/cli.js', import.meta.url).pathname
@@ -133,6 +133,42 @@ test('leonardo sends a named model to v2 and reports a failed generation', async
 	assert.equal(calls[0].url, 'https://cloud.leonardo.ai/api/rest/v2/generations')
 	assert.match(calls[0].init.body, /"model":"gpt-image-1.5"/)
 	assert.equal(calls[1].url, 'https://cloud.leonardo.ai/api/rest/v1/generations/g2')
+})
+
+test('recraft is picked by RECRAFT_API_TOKEN, asks for a vector logo and passes the accent', async () => {
+	assert.throws(() => pickProvider(undefined, undefined, {}), /RECRAFT_API_TOKEN/)
+	const SVG = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"/>')
+	const calls = mockFetch((url) =>
+		url === 'https://cdn.test/r.svg' ? SVG : { data: [{ url: 'https://cdn.test/r.svg' }] }
+	)
+	const gen = pickProvider(undefined, undefined, { RECRAFT_API_TOKEN: 'rk' })
+	assert.deepEqual(await gen('p', '1:1', '#ff8000'), SVG)
+	assert.equal(calls[0].url, 'https://external.api.recraft.ai/v1/images/generations')
+	assert.equal(calls[0].init.headers.Authorization, 'Bearer rk')
+	const body = JSON.parse(calls[0].init.body)
+	assert.equal(body.style, 'vector_illustration')
+	assert.deepEqual(body.controls.colors, [{ rgb: [255, 128, 0] }])
+	await gen('p', '16:9')
+	assert.equal(JSON.parse(calls[2].init.body).style, 'digital_illustration')
+})
+
+test('an SVG logo is written as favicon.svg itself, sanitised, with no logo.png', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'brand-kit-ai-'))
+	const svg =
+		'<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" onload="x()"><script>alert(1)</script><a href="javascript:x()"><rect width="64" height="64" onclick=\'y()\'/></a></svg>'
+	const written = await generateAiArt(
+		dir,
+		await resolveBrandMeta({ name: 'v', description: 'x' }, dir),
+		async (_p, aspect) => (aspect === '1:1' ? Buffer.from(svg) : PNG)
+	)
+	assert.deepEqual(written, ['brand/background.png', 'brand/favicon.svg'])
+	const out = readFileSync(join(dir, 'brand/favicon.svg'), 'utf8')
+	assert.equal(
+		out,
+		'<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><a><rect width="64" height="64"/></a></svg>'
+	)
+	assert.equal(sanitizeSvg('<svg><script src="x"/></svg>'), '<svg></svg>')
+	assert.equal(existsSync(join(dir, 'brand/logo.png')), false)
 })
 
 test('generated art becomes the favicon and every canvas background, and renders', async () => {
