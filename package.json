@@ -46,6 +46,7 @@
     "@biomejs/biome": "^2.5.7",
     "@rtorcato/repo-tooling": "^5.1.4",
     "@types/node": "^26.6.3",
+    "conventional-changelog-conventionalcommits": "^9.3.1",
     "publint": "^0.3.23",
     "semantic-release": "^25.0.8",
     "typescript": "^7.0.2"
