@@ -5,6 +5,7 @@ import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { generateAiArt, pickProvider } from './ai.js'
 import {
+	hasBanner,
 	addReadmeBanner,
 	bannerMobileSvg,
 	bannerSvg,
@@ -127,7 +128,7 @@ async function doctor(
 	const readme = path.join(dir, 'README.md')
 	if (await exists(readme)) {
 		checks.push(
-			/brand\/banner(?:-mobile)?\.png/.test(await read(readme))
+			hasBanner(await read(readme))
 				? { check: 'README shows the banner', status: 'ok' }
 				: {
 						check: 'README shows the banner',

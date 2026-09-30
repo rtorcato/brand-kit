@@ -25,12 +25,12 @@ test('wrapText wraps greedily and ellipsises what overflows maxLines', () => {
 	assert.equal(cut[1], 'ccc ddd…')
 })
 
-test('upsertBanner refreshes in place, leaves a hand-written banner, else prepends', () => {
+test('upsertBanner refreshes in place, ignores a table row naming banner.png, else prepends', () => {
 	const block = buildBannerBlock('x')
 	const stale = `${BANNER_START}\nold\n${BANNER_END}`
 	assert.equal(upsertBanner(`${stale}\n\n# T`, block), `${block}\n\n# T`)
-	const handmade = '<img src="banner.png">\n# T'
-	assert.equal(upsertBanner(handmade, block), handmade)
+	const table = '| `brand/banner.png` | 1280x320 |\n# T'
+	assert.equal(upsertBanner(table, block), `${block}\n\n${table}`)
 	assert.equal(upsertBanner('# T', block), `${block}\n\n# T`)
 })
 

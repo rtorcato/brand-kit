@@ -674,10 +674,18 @@ ${lightDesktop}  <img src="./brand/banner.png" alt="${esc(name)} banner" width="
 ${BANNER_END}`
 }
 
+/** True when the README carries the banner block (current or legacy markers). */
+export function hasBanner(readme: string): boolean {
+	return [[BANNER_START, BANNER_END], LEGACY_MARKERS].some(([open, close]) => {
+		const start = readme.indexOf(open)
+		return start !== -1 && readme.indexOf(close) > start
+	})
+}
+
 /**
- * Put the banner block at the top of a README. Refreshes an existing block in
- * place; leaves alone a README that already shows a banner outside one (a
- * hand-written `<picture>`); otherwise prepends. Idempotent.
+ * Put the banner block at the top of a README. Refreshes an existing marked
+ * block in place; otherwise prepends. A bare `banner.png` mention (an outputs
+ * table) is not a banner. Idempotent.
  */
 export function upsertBanner(readme: string, block: string): string {
 	for (const [open, close] of [[BANNER_START, BANNER_END], LEGACY_MARKERS]) {
@@ -687,7 +695,6 @@ export function upsertBanner(readme: string, block: string): string {
 			return readme.slice(0, start) + block + readme.slice(end + close.length)
 		}
 	}
-	if (/banner(?:-mobile)?\.png/.test(readme)) return readme
 	return `${block}\n\n${readme}`
 }
 
