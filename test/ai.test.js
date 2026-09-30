@@ -152,6 +152,17 @@ test('recraft is picked by RECRAFT_API_TOKEN, asks for a vector logo and passes 
 	assert.equal(JSON.parse(calls[2].init.body).style, 'digital_illustration')
 })
 
+test('a failed image download throws instead of saving the error page', async () => {
+	globalThis.fetch = async (url) =>
+		String(url) === 'https://cdn.test/gone.png'
+			? new Response('Forbidden', { status: 403 })
+			: Response.json({ data: [{ url: 'https://cdn.test/gone.png' }] })
+	await assert.rejects(
+		pickProvider('recraft', undefined, { RECRAFT_API_TOKEN: 'rk' })('p', '1:1'),
+		/recraft: image download HTTP 403/
+	)
+})
+
 test('a hostile SVG logo is embedded as an <image>, never inlined, with no logo.png', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'brand-kit-ai-'))
 	const svg =

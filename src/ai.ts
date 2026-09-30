@@ -21,6 +21,13 @@ async function json(res: Response, provider: string): Promise<Record<string, any
 	return (await res.json()) as Record<string, any>
 }
 
+/** Fetches the finished image; an error page must not be saved as art. */
+async function download(url: string, provider: string): Promise<Buffer> {
+	const res = await fetch(url)
+	if (!res.ok) throw new Error(`${provider}: image download HTTP ${res.status}`)
+	return Buffer.from(await res.arrayBuffer())
+}
+
 const higgsfieldKey = (env: Env): string | undefined =>
 	env.HF_KEY ??
 	(env.HF_API_KEY_ID && env.HF_API_KEY_SECRET
@@ -62,7 +69,7 @@ export const PROVIDERS: Record<string, Provider> = {
 				}
 				const url = job.images?.[0]?.url
 				if (job.status !== 'completed' || !url) throw new Error(`higgsfield: request ${job.status}`)
-				return Buffer.from(await (await fetch(url)).arrayBuffer())
+				return download(url, 'higgsfield')
 			},
 	},
 	openai: {
@@ -151,7 +158,7 @@ export const PROVIDERS: Record<string, Provider> = {
 				}
 				const url = gen.generated_images?.[0]?.url
 				if (gen.status !== 'COMPLETE' || !url) throw new Error(`leonardo: generation ${gen.status}`)
-				return Buffer.from(await (await fetch(url)).arrayBuffer())
+				return download(url, 'leonardo')
 			},
 	},
 	// Vector style returns real SVG for the logo; the background stays raster.
@@ -182,7 +189,7 @@ export const PROVIDERS: Record<string, Provider> = {
 				)
 				const url = res.data?.[0]?.url
 				if (!url) throw new Error('recraft: no image in the response')
-				return Buffer.from(await (await fetch(url)).arrayBuffer())
+				return download(url, 'recraft')
 			},
 	},
 }
