@@ -22,6 +22,7 @@ npx @rtorcato/brand-kit --ai --ai-provider gemini --ai-prompt "neon line art"
 | `gemini` | `GEMINI_API_KEY` | `gemini-2.5-flash-image` |
 | `leonardo` | `LEONARDO_API_KEY` | Phoenix 1.0 (`de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3`) |
 | `recraft` | `RECRAFT_API_TOKEN` | `recraftv3` (vector logo) |
+| `cloudflare` | `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` | `@cf/black-forest-labs/flux-1-schnell` |
 
 Without `--ai-provider`, brand-kit uses the first provider in that order whose
 key is set. `--ai-model` overrides the model, and `--ai-prompt` adds a style
@@ -34,6 +35,17 @@ platform models), and anything else is a v2 model name such as
 Recraft draws the logo in its `vector_illustration` style, so it comes back as
 real SVG, and gets the accent as a colour input as well as in the prompt. The
 background uses the raster `digital_illustration` style.
+
+Cloudflare Workers AI is the cheapest option: FLUX.1 schnell costs a fraction
+of a cent per image, and a brand-kit run fits in the free daily allowance. It
+is checked last, because `CLOUDFLARE_API_TOKEN` is often set for deploys, so
+pass `--ai-provider cloudflare` when another key is set too. The token needs
+the **Workers AI** permission; a deploy-only token gets a 403. Create one at
+[dash.cloudflare.com → API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+with the "Workers AI" template, and copy the account ID from the dashboard.
+`--ai-model` reaches other Workers AI models, such as `@cf/leonardo/phoenix-1.0`
+or `@cf/leonardo/lucid-origin`, which get the canvas width and height;
+FLUX.1 schnell draws square and the canvas crops it.
 
 Keys come from the shell or a `.env` in the target repo; the shell wins.
 brand-kit warns if that `.env` is not gitignored.

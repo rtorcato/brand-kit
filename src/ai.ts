@@ -192,6 +192,47 @@ export const PROVIDERS: Record<string, Provider> = {
 				return download(url, 'recraft')
 			},
 	},
+	// Last on purpose: CLOUDFLARE_API_TOKEN is often a deploy token without AI
+	// permission, so it only wins when no other image key is set.
+	// https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/
+	cloudflare: {
+		keys: 'CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN',
+		key: (env) =>
+			env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_API_TOKEN
+				? `${env.CLOUDFLARE_ACCOUNT_ID}:${env.CLOUDFLARE_API_TOKEN}`
+				: undefined,
+		make:
+			(key, model = '@cf/black-forest-labs/flux-1-schnell') =>
+			async (prompt, aspect) => {
+				const [account, token] = key.split(/:(.*)/s)
+				// ponytail: schnell takes no size (square; the canvas crops it). Other
+				// JSON models get width/height; multipart ones (FLUX.2) aren't supported.
+				const size = model.endsWith('/flux-1-schnell')
+					? {}
+					: aspect === '1:1'
+						? { width: 1024, height: 1024 }
+						: { width: 1536, height: 864 }
+				const res = await fetch(
+					`https://api.cloudflare.com/client/v4/accounts/${account}/ai/run/${model}`,
+					{
+						method: 'POST',
+						headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+						body: JSON.stringify({ prompt, ...size }),
+					}
+				)
+				if (res.status === 401 || res.status === 403)
+					throw new Error(
+						`cloudflare: HTTP ${res.status}: CLOUDFLARE_API_TOKEN needs the Workers AI permission (a deploy-only token is refused). Create one from the "Workers AI" template at https://dash.cloudflare.com/profile/api-tokens`
+					)
+				if (!res.headers.get('content-type')?.includes('json')) {
+					if (!res.ok) throw new Error(`cloudflare: HTTP ${res.status}`)
+					return Buffer.from(await res.arrayBuffer())
+				}
+				const image = (await json(res, 'cloudflare')).result?.image
+				if (!image) throw new Error('cloudflare: no image in the response')
+				return Buffer.from(image, 'base64')
+			},
+	},
 }
 
 /** The named provider, else the first whose key is set. */

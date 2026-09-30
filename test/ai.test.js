@@ -152,6 +152,34 @@ test('recraft is picked by RECRAFT_API_TOKEN, asks for a vector logo and passes 
 	assert.equal(JSON.parse(calls[2].init.body).style, 'digital_illustration')
 })
 
+test('cloudflare is checked last, decodes base64 JSON and raw bytes, and explains a 403', async () => {
+	const cf = { CLOUDFLARE_ACCOUNT_ID: 'acct', CLOUDFLARE_API_TOKEN: 'secret-token' }
+	assert.throws(() => pickProvider(undefined, undefined, {}), /CLOUDFLARE_API_TOKEN/)
+	// Any other key wins over a (possibly deploy-only) Cloudflare token.
+	mockFetch(() => ({ data: [{ b64_json: b64 }] }))
+	await pickProvider(undefined, undefined, { ...cf, OPENAI_API_KEY: 'k' })('p', '1:1')
+	let calls = mockFetch(() => ({ result: { image: b64 }, success: true }))
+	assert.deepEqual(await pickProvider(undefined, undefined, cf)('p', '16:9'), PNG)
+	assert.equal(
+		calls[0].url,
+		'https://api.cloudflare.com/client/v4/accounts/acct/ai/run/@cf/black-forest-labs/flux-1-schnell'
+	)
+	assert.equal(calls[0].init.headers.Authorization, 'Bearer secret-token')
+	assert.deepEqual(JSON.parse(calls[0].init.body), { prompt: 'p' })
+	globalThis.fetch = async (url, init) => {
+		calls = [{ url: String(url), init }]
+		return new Response(PNG, { headers: { 'content-type': 'image/jpeg' } })
+	}
+	const model = '@cf/leonardo/phoenix-1.0'
+	assert.deepEqual(await pickProvider('cloudflare', model, cf)('p', '16:9'), PNG)
+	assert.match(calls[0].init.body, /"width":1536,"height":864/)
+	globalThis.fetch = async () => Response.json({ success: false }, { status: 403 })
+	await assert.rejects(
+		pickProvider('cloudflare', undefined, cf)('p', '1:1'),
+		(e) => /403.*Workers AI permission/.test(e.message) && !/secret-token/.test(e.message)
+	)
+})
+
 test('a failed image download throws instead of saving the error page', async () => {
 	globalThis.fetch = async (url) =>
 		String(url) === 'https://cdn.test/gone.png'
