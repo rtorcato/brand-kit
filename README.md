@@ -1,3 +1,10 @@
+<!-- js-tooling:banner:start -->
+<picture>
+  <source media="(max-width: 640px)" srcset="./brand/banner-mobile.png">
+  <img src="./brand/banner.png" alt="brand-kit banner" width="1600">
+</picture>
+<!-- js-tooling:banner:end -->
+
 # @rtorcato/brand-kit
 
 Banner, mobile banner, social card and favicon for a repo, generated as SVG
@@ -15,6 +22,8 @@ npx @rtorcato/brand-kit render                            # re-render stale PNGs
 npx @rtorcato/brand-kit doctor                            # report drift
 npx @rtorcato/brand-kit doctor --strict                   # CI: exit 1 on warnings too
 ```
+
+Full docs: [docs.torcato.dev/brand-kit](https://docs.torcato.dev/brand-kit/). See [`examples/`](examples) for real output from each mode.
 
 Rendering needs `rsvg-convert` (`brew install librsvg`, apt:
 `apt-get install librsvg2-bin`). Without it the SVG sources are still written.
@@ -48,6 +57,35 @@ and Discord. For images you post or upload to a profile, add `--social`:
 
 Once a social source exists, `render`, `render.sh`, `doctor` and `--update`
 keep it current without the flag.
+
+## AI artwork
+
+The default logo is the project's initial on an accent tile. With an image API
+key, `--ai` replaces it with a generated logo and adds a generated background
+behind every canvas:
+
+```sh
+npx @rtorcato/brand-kit --ai                                  # first key found
+npx @rtorcato/brand-kit --ai --ai-provider gemini --ai-prompt "neon line art"
+```
+
+| Provider | Env vars | Default model |
+|---|---|---|
+| `higgsfield` | `HF_API_KEY_ID` + `HF_API_KEY_SECRET` (or `HF_KEY=id:secret`) | `higgsfield-ai/soul/v2/standard` |
+| `openai` | `OPENAI_API_KEY` | `gpt-image-1` |
+| `gemini` | `GEMINI_API_KEY` | `gemini-2.5-flash-image` |
+| `leonardo` | `LEONARDO_API_KEY` | Phoenix 1.0 (`de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3`) |
+| `recraft` | `RECRAFT_API_TOKEN` | `recraftv3` (vector logo) |
+
+Keys come from the shell or a `.env` in the target repo; the shell wins, and
+brand-kit warns if that `.env` is not gitignored. `--ai-model` overrides the
+model.
+
+The art is saved as sources: `brand/logo.png`, `brand/background.png`, and a
+self-contained `brand/favicon.svg` that embeds the logo (with `recraft`, the
+vector logo is `favicon.svg` itself, and no `logo.png`). Renders after that
+are deterministic and need no key; run `--ai` again only for new art. Your own
+`brand/background.png` works too: drop it in and run `--update`.
 
 ## Where the name, tagline and accent come from
 

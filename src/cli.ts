@@ -1,8 +1,23 @@
 #!/usr/bin/env node
-import { readFile, stat } from 'node:fs/promises'
+import { spawnSync } from 'node:child_process'
+import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
-import { addReadmeBanner, generateBrand, RENDERS, renderBrand, syncBrandToDocs } from './brand.js'
+import { generateAiArt, pickProvider } from './ai.js'
+import {
+	addReadmeBanner,
+	bannerMobileSvg,
+	bannerSvg,
+	generateBrand,
+	RENDERS,
+	renderBrand,
+	resolveBrandMeta,
+	DOCS_ASSETS,
+	SOCIAL,
+	socialCardSvg,
+	staleRenders,
+	syncBrandToDocs,
+} from './brand.js'
 import { exists, read } from './fs.js'
 
 const HELP = `brand-kit — banner, social card and favicon for a repo
@@ -13,7 +28,7 @@ Commands:
   init     (default) Write brand/ SVG sources + render.sh, render PNGs when
            rsvg-convert is installed, add the README banner
   render   Re-render stale PNGs and favicon.ico from brand/*.svg
-  doctor   Report missing sources, stale PNGs and a README without the banner
+  doctor   Report missing or drifted sources, stale PNGs and a README without the banner
            (exit 1 when a source is missing; with --strict, on any warning too)
 
 Options:
@@ -23,6 +38,16 @@ Options:
   --update          init: rewrite generated sources that differ (never favicon.svg)
   --social          init: also write avatar, Instagram post, story, and X, LinkedIn,
                     YouTube and Facebook headers
+  --light           init: also write light-theme banners for the README <picture>
+  --ai              init: generate a logo (brand/logo.png, drawn by favicon.svg) and a
+                    canvas background (brand/background.png) with an image API,
+                    replacing both. Uses the first key set: HF_API_KEY_ID +
+                    HF_API_KEY_SECRET (Higgsfield), OPENAI_API_KEY, GEMINI_API_KEY,
+                    LEONARDO_API_KEY, RECRAFT_API_TOKEN (vector logo),
+                    from the shell or the repo's .env
+  --ai-provider <p> init: higgsfield, openai, gemini, leonardo or recraft instead of the first key found
+  --ai-model <id>   init: override the provider's default model
+  --ai-prompt <txt> init: style hint added to both prompts, e.g. "neon line art"
   --strict          doctor: exit 1 on warnings (stale renders, bannerless README) too
   --json            Machine-readable output on stdout
   --yes, -y         Accepted for parity; the CLI never prompts
@@ -35,10 +60,13 @@ const SOURCES = ['favicon.svg', 'banner.svg', 'banner-mobile.svg', 'social-card.
 
 type Check = { check: string; status: 'ok' | 'warn' | 'fail'; detail?: string }
 
-/** Read-only. A missing source fails; a missing or stale render and a bannerless README warn. */
-async function doctor(dir: string): Promise<Check[]> {
+/** Read-only. A missing source fails; a missing or stale render, a drifted source and a bannerless README warn. */
+async function doctor(
+	dir: string,
+	pkg: Record<string, unknown> | null,
+	opts: { tagline?: string; accent?: string }
+): Promise<Check[]> {
 	const at = (rel: string): string => path.join(dir, 'brand', rel)
-	const mtime = async (f: string): Promise<number> => (await stat(f)).mtimeMs
 	const checks: Check[] = []
 	for (const f of SOURCES) {
 		checks.push(
@@ -47,13 +75,30 @@ async function doctor(dir: string): Promise<Check[]> {
 				: { check: `brand/${f}`, status: 'fail', detail: 'missing — run `brand-kit`' }
 		)
 	}
+	// Regenerate in memory; favicon.svg is skipped because hand edits there are expected.
+	const meta = await resolveBrandMeta(pkg, dir, opts)
+	const canvases: Array<[string, string]> = [
+		['banner.svg', bannerSvg(meta)],
+		['banner-mobile.svg', bannerMobileSvg(meta)],
+		['social-card.svg', socialCardSvg(meta)],
+		...SOCIAL.map(([stem, , , svg]): [string, string] => [`${stem}.svg`, svg(meta)]),
+	]
+	for (const [f, expected] of canvases) {
+		if ((await exists(at(f))) && (await read(at(f))) !== expected) {
+			checks.push({
+				check: `brand/${f}`,
+				status: 'warn',
+				detail: 'differs from the current brand meta — run `brand-kit --update`',
+			})
+		}
+	}
+	const stale = new Set((await staleRenders(path.join(dir, 'brand'))).map(([, out]) => out))
 	for (const [src, out] of RENDERS) {
 		if (!(await exists(at(src)))) continue
-		const newest = Math.max(await mtime(at(src)), await mtime(at('favicon.svg')).catch(() => 0))
 		const detail = !(await exists(at(out)))
 			? 'missing'
-			: (await mtime(at(out))) < newest
-				? 'older than its source'
+			: stale.has(out)
+				? 'out of date with its source'
 				: null
 		checks.push(
 			detail
@@ -64,6 +109,20 @@ async function doctor(dir: string): Promise<Check[]> {
 					}
 				: { check: `brand/${out}`, status: 'ok' }
 		)
+	}
+	if (await exists(path.join(dir, 'apps', 'docs'))) {
+		for (const f of DOCS_ASSETS) {
+			const src = at(f)
+			const copy = path.join(dir, 'apps', 'docs', 'static', 'img', f)
+			if (!(await exists(src)) || !(await exists(copy))) continue
+			if (!(await readFile(src)).equals(await readFile(copy))) {
+				checks.push({
+					check: `apps/docs/static/img/${f}`,
+					status: 'warn',
+					detail: 'differs from brand/ — run `brand-kit`',
+				})
+			}
+		}
 	}
 	const readme = path.join(dir, 'README.md')
 	if (await exists(readme)) {
@@ -89,6 +148,11 @@ async function main(): Promise<number> {
 			accent: { type: 'string' },
 			update: { type: 'boolean' },
 			social: { type: 'boolean' },
+			light: { type: 'boolean' },
+			ai: { type: 'boolean' },
+			'ai-provider': { type: 'string' },
+			'ai-model': { type: 'string' },
+			'ai-prompt': { type: 'string' },
 			strict: { type: 'boolean' },
 			json: { type: 'boolean' },
 			yes: { type: 'boolean', short: 'y' },
@@ -111,7 +175,8 @@ async function main(): Promise<number> {
 		else console.error(`error: ${message}`)
 		return 1
 	}
-	if (values.accent && !HEX.test(values.accent)) return fail('--accent must be a #rrggbb hex colour')
+	if (values.accent && !HEX.test(values.accent))
+		return fail('--accent must be a #rrggbb hex colour')
 
 	const dir = path.resolve(values.dir ?? '.')
 	const pkgFile = path.join(dir, 'package.json')
@@ -134,17 +199,40 @@ async function main(): Promise<number> {
 	const finish = async (): Promise<string[]> => {
 		const rendered = (await renderBrand(dir)) ?? []
 		const banner = await addReadmeBanner(dir, name)
-		return [...rendered, ...(banner ? [banner] : []), ...(await syncBrandToDocs(dir))]
+		return [
+			...rendered,
+			...(banner ? [banner] : []),
+			...(await syncBrandToDocs(dir)),
+		]
 	}
 
 	if (command === 'init') {
-		const written = await generateBrand(pkg, dir, {
+		const opts = {
 			tagline: values.tagline,
 			accent: values.accent,
-			update: values.update,
 			social: values.social,
-		})
-		wrote([...written, ...(await finish())])
+			light: values.light,
+		}
+		const art: string[] = []
+		if (values.ai) {
+			// Shell env wins over .env: loadEnvFile never overwrites a variable already set.
+			const envFile = path.join(dir, '.env')
+			if (await exists(envFile)) {
+				process.loadEnvFile(envFile)
+				if (spawnSync('git', ['check-ignore', '-q', '.env'], { cwd: dir }).status === 1) {
+					console.error(
+						'   warning: .env holds API keys but is not gitignored — add it to .gitignore'
+					)
+				}
+			}
+			const generate = pickProvider(values['ai-provider'], values['ai-model'])
+			const meta = await resolveBrandMeta(pkg, dir, opts)
+			if (!values.json) console.error('generating logo and background…')
+			art.push(...(await generateAiArt(dir, meta, generate, values['ai-prompt'])))
+		}
+		// New artwork changes every canvas, so rewrite them as --update would.
+		const written = await generateBrand(pkg, dir, { ...opts, update: values.update || values.ai })
+		wrote([...art, ...written, ...(await finish())])
 		return 0
 	}
 	if (command === 'render') {
@@ -152,7 +240,7 @@ async function main(): Promise<number> {
 		return 0
 	}
 	if (command === 'doctor') {
-		const checks = await doctor(dir)
+		const checks = await doctor(dir, pkg, { tagline: values.tagline, accent: values.accent })
 		const failed = checks.filter(
 			(c) => c.status === 'fail' || (values.strict && c.status === 'warn')
 		).length

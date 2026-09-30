@@ -9,7 +9,8 @@
  * theme / neutral grey.
  */
 import { execFileSync, spawnSync } from 'node:child_process'
-import { copyFile, mkdir, stat, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { exists, read, writeIfMissing } from './fs.js'
 
@@ -26,6 +27,14 @@ const COUNTER_GLOW = '#6e7bff'
 const INK = '#0A0E16'
 const TEXT = '#e6edf3'
 const MUTED = '#9ba6b8'
+/** Light-theme counterparts, for the `--light` banner variants. */
+const LIGHT = {
+	text: '#1f2328',
+	muted: '#57606a',
+	bg: ['#ffffff', '#f6f8fa'],
+	pill: '#f6f8fa',
+	stroke: '#d0d7de',
+}
 // Fallback stacks: Avenir Next and Menlo are macOS-only, so Linux falls back to these.
 const SANS = "'Avenir Next', Inter, 'Helvetica Neue', Arial, sans-serif"
 const MONO = "Menlo, 'DejaVu Sans Mono', monospace"
@@ -37,6 +46,10 @@ export interface BrandMeta {
 	accent: string
 	/** Package name for the `npm i` pill, or null for a repo that publishes nothing. */
 	install: string | null
+	/** True when `brand/background.png` exists; the canvases then draw it under a dark wash. */
+	background?: boolean
+	/** Draw the light-theme palette (the `--light` banner variants). */
+	light?: boolean
 }
 
 /** `"` matters because this output also lands in double-quoted attributes (the `aria-label` below). */
@@ -128,6 +141,8 @@ export function taglineFits(tagline: string): boolean {
 }
 
 export interface BrandOptions {
+	/** Also write banner-light.svg and banner-mobile-light.svg for GitHub's light theme. */
+	light?: boolean
 	/** Short banner line; falls back to the family entry, then package.json's description. */
 	tagline?: string
 	/** Accent hex; falls back to the family entry, the docs theme, the favicon, then grey. */
@@ -163,6 +178,7 @@ export async function resolveBrandMeta(
 			opts.tagline || member?.tagline || description || 'Add a short tagline with --tagline.',
 		accent,
 		install: pkgName && pkg?.private !== true ? pkgName : null,
+		background: await exists(path.join(targetDir, 'brand', 'background.png')),
 	}
 }
 
@@ -191,7 +207,7 @@ function mark(x: number, y: number, size: number): string {
 function wordmark(meta: BrandMeta): string {
 	const i = meta.name.lastIndexOf('-')
 	if (i <= 0) return `<tspan fill="${meta.accent}">${esc(meta.name)}</tspan>`
-	return `<tspan fill="${TEXT}">${esc(meta.name.slice(0, i + 1))}</tspan><tspan fill="${meta.accent}">${esc(meta.name.slice(i + 1))}</tspan>`
+	return `<tspan fill="${meta.light ? LIGHT.text : TEXT}">${esc(meta.name.slice(0, i + 1))}</tspan><tspan fill="${meta.accent}">${esc(meta.name.slice(i + 1))}</tspan>`
 }
 
 function taglineBlock(
@@ -206,7 +222,7 @@ function taglineBlock(
 		.map((l, i) => `\t\t<tspan x="${opts.x}" y="${opts.y + i * opts.step}">${esc(l)}</tspan>`)
 		.join('\n')
 	const anchor = opts.centred ? ' text-anchor="middle"' : ''
-	return `	<text${anchor} font-family="${SANS}" font-weight="500" font-size="${opts.size}" fill="${MUTED}">
+	return `	<text${anchor} font-family="${SANS}" font-weight="500" font-size="${opts.size}" fill="${meta.light ? LIGHT.muted : MUTED}">
 ${tspans}
 	</text>`
 }
@@ -218,16 +234,16 @@ function installPanel(
 ): string {
 	if (!meta.install) return ''
 	return `
-	<rect x="${opts.x}" y="${opts.y}" width="${opts.w}" height="${opts.h}" rx="14" fill="#11151d" stroke="#232936" stroke-width="1"/>
-	<text xml:space="preserve" x="${opts.x + opts.w / 2}" y="${opts.y + opts.h / 2 + opts.size / 3}" text-anchor="middle" font-family="${MONO}" font-size="${opts.size}"><tspan fill="${meta.accent}">npm i </tspan><tspan fill="${TEXT}">${esc(meta.install)}</tspan></text>`
+	<rect x="${opts.x}" y="${opts.y}" width="${opts.w}" height="${opts.h}" rx="14" fill="${meta.light ? LIGHT.pill : '#11151d'}" stroke="${meta.light ? LIGHT.stroke : '#232936'}" stroke-width="1"/>
+	<text xml:space="preserve" x="${opts.x + opts.w / 2}" y="${opts.y + opts.h / 2 + opts.size / 3}" text-anchor="middle" font-family="${MONO}" font-size="${opts.size}"><tspan fill="${meta.accent}">npm i </tspan><tspan fill="${meta.light ? LIGHT.text : TEXT}">${esc(meta.install)}</tspan></text>`
 }
 
 function canvas(meta: BrandMeta, w: number, h: number, glow: { cx: number; cy: number }): string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(meta.name)} — ${esc(meta.tagline)}">
 	<defs>
 		<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-			<stop offset="0" stop-color="#0d1117"/>
-			<stop offset="1" stop-color="#090c13"/>
+			<stop offset="0" stop-color="${meta.light ? LIGHT.bg[0] : '#0d1117'}"/>
+			<stop offset="1" stop-color="${meta.light ? LIGHT.bg[1] : '#090c13'}"/>
 		</linearGradient>
 		<radialGradient id="glow" cx="${glow.cx}" cy="${glow.cy}" r="0.55">
 			<stop offset="0" stop-color="${meta.accent}" stop-opacity="0.15"/>
@@ -239,7 +255,14 @@ function canvas(meta: BrandMeta, w: number, h: number, glow: { cx: number; cy: n
 		</radialGradient>
 	</defs>
 
-	<rect width="${w}" height="${h}" fill="url(#bg)"/>
+	<rect width="${w}" height="${h}" fill="url(#bg)"/>${
+		meta.background
+			? `
+	<!-- Artwork: brand/background.png, cropped to fill, washed dark so the text stays readable. -->
+	<image href="background.png" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>
+	<rect width="${w}" height="${h}" fill="${meta.light ? LIGHT.bg[0] : '#0d1117'}" fill-opacity="0.55"/>`
+			: ''
+	}
 	<rect width="${w}" height="${h}" fill="url(#glow)"/>
 	<rect width="${w}" height="${h}" fill="url(#glow2)"/>
 `
@@ -351,7 +374,7 @@ export const SOCIAL: SocialCanvas[] = [
 export const RENDER_SH = `#!/usr/bin/env bash
 # Render the committed brand PNGs from their SVG sources.
 # Sizes come from the brand-asset spec: 1280x320 banner, 1280x786 mobile,
-# 1280x640 social card, 512x512 PWA icon. (\`brand-kit\` also packs favicon.ico.)
+# 1280x640 social card, 512x512 PWA icon, favicon.ico.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -367,15 +390,24 @@ rsvg-convert -w 1280 -h 640 brand/social-card.svg   -o brand/social-card.png
 rsvg-convert -w 512  -h 512 brand/favicon.svg       -o brand/favicon-512.png
 echo "rendered: brand/banner.png brand/banner-mobile.png brand/social-card.png brand/favicon-512.png"
 
-# The docs-site assets, rendered only when the site exists to hold them.
+# favicon.ico: the 16 and 32 sizes, packed with ImageMagick when present.
+if command -v magick >/dev/null 2>&1; then
+	magick -background none brand/favicon.svg -define icon:auto-resize=16,32 brand/favicon.ico
+	echo "rendered: brand/favicon.ico"
+else
+	echo "skipped brand/favicon.ico: needs ImageMagick (\`magick\`) or \`npx @rtorcato/brand-kit render\`" >&2
+fi
+
+# The docs site gets copies (never overwritten), like \`brand-kit\`'s docs sync.
 img=apps/docs/static/img
-if [ -d "$img" ]; then
-	rsvg-convert -w 1280 -h 640 brand/social-card.svg -o "$img/social-card.png"
-	echo "rendered: $img/social-card.png"
-	if [ -f "$img/favicon.svg" ]; then
-		rsvg-convert -w 512 -h 512 "$img/favicon.svg" -o "$img/favicon-512.png"
-		echo "rendered: $img/favicon-512.png"
-	fi
+if [ -d apps/docs ]; then
+	mkdir -p "$img"
+	for f in favicon.svg favicon.ico social-card.png; do
+		if [ -f "brand/$f" ] && [ ! -e "$img/$f" ]; then
+			cp "brand/$f" "$img/$f"
+			echo "copied: $img/$f"
+		fi
+	done
 fi
 
 # The --social canvases, each rendered only when its source exists.
@@ -385,19 +417,21 @@ social() {
 		echo "rendered: brand/$1.png"
 	fi
 }
+social banner-light 1280 320
+social banner-mobile-light 1280 786
 ${SOCIAL.map(([stem, w, h]) => `social ${stem} ${w} ${h}`).join('\n')}
 `
 
 /**
  * Repoint a README still using the pre-amendment root-level banner paths at
- * `brand/`. Only the two banner `srcset`/`src` values move — nothing else in the
- * README is touched.
+ * `brand/`. Only bare or `./` root-level banner paths move — `images/banner.png`,
+ * `my-banner.png` and anything else in the README is left alone.
  */
 export async function repointReadmeBanners(targetDir: string): Promise<string | null> {
 	const file = path.join(targetDir, 'README.md')
 	if (!(await exists(file))) return null
 	const readme = await read(file)
-	const next = readme.replace(/(?<!brand\/)(?:\.\/)?(banner(?:-mobile)?\.png)/g, './brand/$1')
+	const next = readme.replace(/(?<![\w/.-])(?:\.\/)?(banner(?:-mobile)?\.png)/g, './brand/$1')
 	if (next === readme) return null
 	await writeFile(file, next)
 	return 'README.md'
@@ -433,6 +467,13 @@ export async function generateBrand(
 		['brand/social-card.svg', socialCardSvg(meta)],
 		['brand/render.sh', RENDER_SH, 0o755],
 	]
+	const lightMeta = { ...meta, light: true }
+	for (const [rel, svg] of [
+		['brand/banner-light.svg', bannerSvg(lightMeta)],
+		['brand/banner-mobile-light.svg', bannerMobileSvg(lightMeta)],
+	] as const) {
+		if (opts.light || (await exists(path.join(targetDir, rel)))) files.push([rel, svg])
+	}
 	for (const [stem, , , svg] of SOCIAL) {
 		const rel = `brand/${stem}.svg`
 		if (opts.social || (await exists(path.join(targetDir, rel)))) files.push([rel, svg(meta)])
@@ -440,7 +481,7 @@ export async function generateBrand(
 	for (const [rel, contents, mode] of files) {
 		const file = path.join(targetDir, rel)
 		// --social refreshes render.sh too, or an older script would skip the new canvases.
-		const rewrite = opts.update || (opts.social && rel === 'brand/render.sh')
+		const rewrite = opts.update || ((opts.social || opts.light) && rel === 'brand/render.sh')
 		if (rewrite && rel !== 'brand/favicon.svg' && (await exists(file))) {
 			if ((await read(file)) === contents) continue
 			await writeFile(file, contents, mode ? { mode } : undefined)
@@ -472,6 +513,8 @@ export const RSVG_HINT =
 export const RENDERS: Array<[string, string, number, number]> = [
 	['banner.svg', 'banner.png', 1280, 320],
 	['banner-mobile.svg', 'banner-mobile.png', 1280, 786],
+	['banner-light.svg', 'banner-light.png', 1280, 320],
+	['banner-mobile-light.svg', 'banner-mobile-light.png', 1280, 786],
 	['social-card.svg', 'social-card.png', 1280, 640],
 	['favicon.svg', 'favicon-512.png', 512, 512],
 	['favicon.svg', 'favicon.ico', 32, 32],
@@ -508,31 +551,53 @@ export function packIco(frames: Array<[size: number, png: Buffer]>): Buffer {
 	return Buffer.concat([header, ...frames.map(([, png]) => png)])
 }
 
-async function mtime(file: string): Promise<number> {
-	return (await stat(file)).mtimeMs
+const MANIFEST = '.render.json'
+
+/** Hash of a render's inputs: its source plus favicon.svg and background.png, which canvases draw. */
+async function inputHash(brand: string, src: string): Promise<string> {
+	const h = createHash('sha256')
+	for (const f of [src, 'favicon.svg', 'background.png']) {
+		const file = path.join(brand, f)
+		h.update((await exists(file)) ? await readFile(file) : '')
+	}
+	return h.digest('hex')
+}
+
+async function readManifest(brand: string): Promise<Record<string, string>> {
+	try {
+		return JSON.parse(await read(path.join(brand, MANIFEST)))
+	} catch {
+		return {}
+	}
 }
 
 /**
- * Render every `brand/` PNG (and favicon.ico) that is missing or older than its
- * source — or than favicon.svg, which every canvas draws. Returns the files
+ * Renders that are missing or whose inputs differ from the hash recorded in
+ * `brand/.render.json` when they were last rendered. Hashes, not mtimes: git
+ * checkout writes files in arbitrary order, so mtimes lie on a fresh clone.
+ * A PNG with no recorded hash counts as stale (renders once, then is recorded).
+ */
+export async function staleRenders(brand: string): Promise<Array<[...(typeof RENDERS)[number], string]>> {
+	const manifest = await readManifest(brand)
+	const stale: Array<[...(typeof RENDERS)[number], string]> = []
+	for (const job of RENDERS) {
+		const [src, out] = job
+		if (!(await exists(path.join(brand, src)))) continue
+		const hash = await inputHash(brand, src)
+		if (!(await exists(path.join(brand, out))) || manifest[out] !== hash) stale.push([...job, hash])
+	}
+	return stale
+}
+
+/**
+ * Render every `brand/` PNG (and favicon.ico) that is missing or whose source,
+ * favicon.svg or background.png changed since it was last rendered. Returns the files
  * written, or null when `rsvg-convert` is not on PATH (after printing
  * {@link RSVG_HINT}). Nothing stale means nothing to do and no PATH lookup.
  */
 export async function renderBrand(targetDir: string): Promise<string[] | null> {
 	const brand = path.join(targetDir, 'brand')
-	const favicon = path.join(brand, 'favicon.svg')
-	const stale: typeof RENDERS = []
-	for (const job of RENDERS) {
-		const [src, out] = job
-		const srcFile = path.join(brand, src)
-		const outFile = path.join(brand, out)
-		if (!(await exists(srcFile))) continue
-		const newest = Math.max(
-			await mtime(srcFile),
-			(await exists(favicon)) ? await mtime(favicon) : 0
-		)
-		if (!(await exists(outFile)) || (await mtime(outFile)) < newest) stale.push(job)
-	}
+	const stale = await staleRenders(brand)
 	if (stale.length === 0) return []
 
 	if (spawnSync('rsvg-convert', ['--version']).error) {
@@ -545,13 +610,16 @@ export async function renderBrand(targetDir: string): Promise<string[] | null> {
 		execFileSync('rsvg-convert', ['-w', String(w), '-h', String(h), src], { cwd: brand })
 
 	const written: string[] = []
-	for (const [src, out, w, h] of stale) {
+	const manifest = await readManifest(brand)
+	for (const [src, out, w, h, hash] of stale) {
 		const png = out.endsWith('.ico')
 			? packIco(ICO_SIZES.map((s) => [s, rsvg(src, s, s)]))
 			: rsvg(src, w, h)
 		await writeFile(path.join(brand, out), png)
+		manifest[out] = hash
 		written.push(`brand/${out}`)
 	}
+	await writeFile(path.join(brand, MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`)
 	return written
 }
 
@@ -560,8 +628,8 @@ export const DOCS_ASSETS = ['favicon.svg', 'favicon.ico', 'social-card.png']
 
 /**
  * Copy the brand favicon and social card into the docs site's `static/img`
- * Copy-if-missing, and a no-op without `apps/docs`, so `brand` and
- * `init` reach the same tree in either order — each calls it.
+ * Copies when the destination is missing or its bytes differ from `brand/`, and is a
+ * no-op without `apps/docs`, so `brand` and `init` reach the same tree in either order.
  */
 export async function syncBrandToDocs(targetDir: string): Promise<string[]> {
 	if (!(await exists(path.join(targetDir, 'apps', 'docs')))) return []
@@ -570,7 +638,8 @@ export async function syncBrandToDocs(targetDir: string): Promise<string[]> {
 	for (const name of DOCS_ASSETS) {
 		const src = path.join(targetDir, 'brand', name)
 		const dest = path.join(targetDir, img, name)
-		if (!(await exists(src)) || (await exists(dest))) continue
+		if (!(await exists(src))) continue
+		if ((await exists(dest)) && (await readFile(src)).equals(await readFile(dest))) continue
 		await mkdir(path.dirname(dest), { recursive: true })
 		await copyFile(src, dest)
 		written.push(path.join(img, name))
@@ -587,11 +656,20 @@ const LEGACY_MARKERS = [
 ] as const
 
 /** The README `<picture>` banner, mobile variant under 640px, as a delimited block. */
-export function buildBannerBlock(name: string): string {
+export function buildBannerBlock(name: string, light = false): string {
+	// First matching <source> wins, so the more specific light+mobile one comes first.
+	const lightMobile = light
+		? `  <source media="(max-width: 640px) and (prefers-color-scheme: light)" srcset="./brand/banner-mobile-light.png">
+`
+		: ''
+	const lightDesktop = light
+		? `  <source media="(prefers-color-scheme: light)" srcset="./brand/banner-light.png">
+`
+		: ''
 	return `${BANNER_START}
 <picture>
-  <source media="(max-width: 640px)" srcset="./brand/banner-mobile.png">
-  <img src="./brand/banner.png" alt="${esc(name)} banner" width="1600">
+${lightMobile}  <source media="(max-width: 640px)" srcset="./brand/banner-mobile.png">
+${lightDesktop}  <img src="./brand/banner.png" alt="${esc(name)} banner" width="1600">
 </picture>
 ${BANNER_END}`
 }
@@ -619,7 +697,14 @@ export async function addReadmeBanner(targetDir: string, name: string): Promise<
 	if (!(await exists(file))) return null
 	if (!(await exists(path.join(targetDir, 'brand', 'banner.png')))) return null
 	const readme = await read(file)
-	const next = upsertBanner(readme, buildBannerBlock(name))
+	const next = upsertBanner(
+		readme,
+		buildBannerBlock(
+			name,
+			(await exists(path.join(targetDir, 'brand', 'banner-light.png'))) &&
+				(await exists(path.join(targetDir, 'brand', 'banner-mobile-light.png')))
+		)
+	)
 	if (next === readme) return null
 	await writeFile(file, next)
 	return 'README.md'
