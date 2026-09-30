@@ -9,7 +9,8 @@
  * theme / neutral grey.
  */
 import { execFileSync, spawnSync } from 'node:child_process'
-import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { exists, read, writeIfMissing } from './fs.js'
 
@@ -550,33 +551,53 @@ export function packIco(frames: Array<[size: number, png: Buffer]>): Buffer {
 	return Buffer.concat([header, ...frames.map(([, png]) => png)])
 }
 
-async function mtime(file: string): Promise<number> {
-	return (await stat(file)).mtimeMs
+const MANIFEST = '.render.json'
+
+/** Hash of a render's inputs: its source plus favicon.svg and background.png, which canvases draw. */
+async function inputHash(brand: string, src: string): Promise<string> {
+	const h = createHash('sha256')
+	for (const f of [src, 'favicon.svg', 'background.png']) {
+		const file = path.join(brand, f)
+		h.update((await exists(file)) ? await readFile(file) : '')
+	}
+	return h.digest('hex')
+}
+
+async function readManifest(brand: string): Promise<Record<string, string>> {
+	try {
+		return JSON.parse(await read(path.join(brand, MANIFEST)))
+	} catch {
+		return {}
+	}
 }
 
 /**
- * Render every `brand/` PNG (and favicon.ico) that is missing or older than its
- * source — or than favicon.svg or background.png, which every canvas draws. Returns the files
+ * Renders that are missing or whose inputs differ from the hash recorded in
+ * `brand/.render.json` when they were last rendered. Hashes, not mtimes: git
+ * checkout writes files in arbitrary order, so mtimes lie on a fresh clone.
+ * A PNG with no recorded hash counts as stale (renders once, then is recorded).
+ */
+export async function staleRenders(brand: string): Promise<Array<[...(typeof RENDERS)[number], string]>> {
+	const manifest = await readManifest(brand)
+	const stale: Array<[...(typeof RENDERS)[number], string]> = []
+	for (const job of RENDERS) {
+		const [src, out] = job
+		if (!(await exists(path.join(brand, src)))) continue
+		const hash = await inputHash(brand, src)
+		if (!(await exists(path.join(brand, out))) || manifest[out] !== hash) stale.push([...job, hash])
+	}
+	return stale
+}
+
+/**
+ * Render every `brand/` PNG (and favicon.ico) that is missing or whose source,
+ * favicon.svg or background.png changed since it was last rendered. Returns the files
  * written, or null when `rsvg-convert` is not on PATH (after printing
  * {@link RSVG_HINT}). Nothing stale means nothing to do and no PATH lookup.
  */
 export async function renderBrand(targetDir: string): Promise<string[] | null> {
 	const brand = path.join(targetDir, 'brand')
-	const favicon = path.join(brand, 'favicon.svg')
-	const background = path.join(brand, 'background.png')
-	const stale: typeof RENDERS = []
-	for (const job of RENDERS) {
-		const [src, out] = job
-		const srcFile = path.join(brand, src)
-		const outFile = path.join(brand, out)
-		if (!(await exists(srcFile))) continue
-		const newest = Math.max(
-			await mtime(srcFile),
-			(await exists(favicon)) ? await mtime(favicon) : 0,
-			(await exists(background)) ? await mtime(background) : 0
-		)
-		if (!(await exists(outFile)) || (await mtime(outFile)) < newest) stale.push(job)
-	}
+	const stale = await staleRenders(brand)
 	if (stale.length === 0) return []
 
 	if (spawnSync('rsvg-convert', ['--version']).error) {
@@ -589,13 +610,16 @@ export async function renderBrand(targetDir: string): Promise<string[] | null> {
 		execFileSync('rsvg-convert', ['-w', String(w), '-h', String(h), src], { cwd: brand })
 
 	const written: string[] = []
-	for (const [src, out, w, h] of stale) {
+	const manifest = await readManifest(brand)
+	for (const [src, out, w, h, hash] of stale) {
 		const png = out.endsWith('.ico')
 			? packIco(ICO_SIZES.map((s) => [s, rsvg(src, s, s)]))
 			: rsvg(src, w, h)
 		await writeFile(path.join(brand, out), png)
+		manifest[out] = hash
 		written.push(`brand/${out}`)
 	}
+	await writeFile(path.join(brand, MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`)
 	return written
 }
 

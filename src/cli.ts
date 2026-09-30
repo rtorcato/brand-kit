@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
-import { readFile, stat } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { generateAiArt, pickProvider } from './ai.js'
@@ -15,6 +15,7 @@ import {
 	DOCS_ASSETS,
 	SOCIAL,
 	socialCardSvg,
+	staleRenders,
 	syncBrandToDocs,
 } from './brand.js'
 import { exists, read } from './fs.js'
@@ -65,7 +66,6 @@ async function doctor(
 	opts: { tagline?: string; accent?: string }
 ): Promise<Check[]> {
 	const at = (rel: string): string => path.join(dir, 'brand', rel)
-	const mtime = async (f: string): Promise<number> => (await stat(f)).mtimeMs
 	const checks: Check[] = []
 	for (const f of SOURCES) {
 		checks.push(
@@ -91,17 +91,13 @@ async function doctor(
 			})
 		}
 	}
+	const stale = new Set((await staleRenders(path.join(dir, 'brand'))).map(([, out]) => out))
 	for (const [src, out] of RENDERS) {
 		if (!(await exists(at(src)))) continue
-		const newest = Math.max(
-			await mtime(at(src)),
-			await mtime(at('favicon.svg')).catch(() => 0),
-			await mtime(at('background.png')).catch(() => 0)
-		)
 		const detail = !(await exists(at(out)))
 			? 'missing'
-			: (await mtime(at(out))) < newest
-				? 'older than its source'
+			: stale.has(out)
+				? 'out of date with its source'
 				: null
 		checks.push(
 			detail
