@@ -5,3 +5,4 @@ dist/
 apps/docs/build/
 apps/docs/.docusaurus/
 apps/docs/docs/changelog.md
+.env
