@@ -16,6 +16,8 @@ npx @rtorcato/brand-kit doctor                            # report drift
 npx @rtorcato/brand-kit doctor --strict                   # CI: exit 1 on warnings too
 ```
 
+See [`examples/`](examples) for real output from each mode.
+
 Rendering needs `rsvg-convert` (`brew install librsvg`, apt:
 `apt-get install librsvg2-bin`). Without it the SVG sources are still written.
 Renders are only pixel-stable on the machine that produced them: the templates
