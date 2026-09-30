@@ -13,6 +13,7 @@ added.
 | [ai-higgsfield](ai-higgsfield) | `--ai --ai-provider higgsfield` | Logo and background from Higgsfield |
 | [ai-gemini](ai-gemini) | `--ai --ai-provider gemini` | Logo and background from Gemini |
 | [ai-openai](ai-openai) | `--ai --ai-provider openai` | Logo and background from OpenAI |
+| [ai-cloudflare](ai-cloudflare) | `--ai --ai-provider cloudflare` | Logo and background from Cloudflare Workers AI (FLUX) |
 
 Regenerate one after a template change, from the repo root:
 
