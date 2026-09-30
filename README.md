@@ -75,13 +75,15 @@ npx @rtorcato/brand-kit --ai --ai-provider gemini --ai-prompt "neon line art"
 | `openai` | `OPENAI_API_KEY` | `gpt-image-1` |
 | `gemini` | `GEMINI_API_KEY` | `gemini-2.5-flash-image` |
 | `leonardo` | `LEONARDO_API_KEY` | Phoenix 1.0 (`de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3`) |
+| `recraft` | `RECRAFT_API_TOKEN` | `recraftv3` (vector logo) |
 
 Keys come from the shell or a `.env` in the target repo; the shell wins, and
 brand-kit warns if that `.env` is not gitignored. `--ai-model` overrides the
 model.
 
 The art is saved as sources: `brand/logo.png`, `brand/background.png`, and a
-self-contained `brand/favicon.svg` that embeds the logo. Renders after that
+self-contained `brand/favicon.svg` that embeds the logo (with `recraft`, the
+vector logo is `favicon.svg` itself, and no `logo.png`). Renders after that
 are deterministic and need no key; run `--ai` again only for new art. Your own
 `brand/background.png` works too: drop it in and run `--update`.
 

@@ -11,7 +11,8 @@ import type { BrandMeta } from './brand.js'
 
 export type Aspect = '1:1' | '16:9'
 type Env = Record<string, string | undefined>
-export type Generate = (prompt: string, aspect: Aspect) => Promise<Buffer>
+/** `accent` is a hint for providers that take colours as input (Recraft). */
+export type Generate = (prompt: string, aspect: Aspect, accent?: string) => Promise<Buffer>
 
 /** Throws with the response body, never the request (it carries the key). */
 async function json(res: Response, provider: string): Promise<Record<string, any>> {
@@ -153,6 +154,37 @@ export const PROVIDERS: Record<string, Provider> = {
 				return Buffer.from(await (await fetch(url)).arrayBuffer())
 			},
 	},
+	// Vector style returns real SVG for the logo; the background stays raster.
+	// https://www.recraft.ai/docs/api-reference/endpoints
+	recraft: {
+		keys: 'RECRAFT_API_TOKEN',
+		key: (env) => env.RECRAFT_API_TOKEN,
+		make:
+			(key, model = 'recraftv3') =>
+			async (prompt, aspect, accent) => {
+				const rgb = accent?.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i)
+				const res = await json(
+					await fetch('https://external.api.recraft.ai/v1/images/generations', {
+						method: 'POST',
+						headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							prompt,
+							model,
+							style: aspect === '1:1' ? 'vector_illustration' : 'digital_illustration',
+							size: aspect === '1:1' ? '1024x1024' : '1820x1024',
+							n: 1,
+							...(rgb && {
+								controls: { colors: [{ rgb: rgb.slice(1).map((h) => Number.parseInt(h, 16)) }] },
+							}),
+						}),
+					}),
+					'recraft'
+				)
+				const url = res.data?.[0]?.url
+				if (!url) throw new Error('recraft: no image in the response')
+				return Buffer.from(await (await fetch(url)).arrayBuffer())
+			},
+	},
 }
 
 /** The named provider, else the first whose key is set. */
@@ -202,7 +234,27 @@ function logoFavicon(meta: BrandMeta, png: Buffer): string {
 	return svg(small.toString('base64'))
 }
 
-/** Write brand/logo.png, brand/background.png and a favicon.svg drawing the logo. */
+const isSvg = (b: Buffer): boolean =>
+	/^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(b.subarray(0, 1024).toString('utf8'))
+
+/**
+ * An API's SVG, made safe to serve as a favicon: no scripts, event handlers,
+ * foreignObject or javascript: links. The viewBox and drawing are untouched.
+ * ponytail: regex, not a parser; fine for generator output, not hostile input at large.
+ */
+export function sanitizeSvg(svg: string): string {
+	return svg
+		.replace(/<(script|foreignObject)\b[\s\S]*?<\/\1\s*>/gi, '')
+		.replace(/<(script|foreignObject)\b[^>]*\/>/gi, '')
+		.replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+		.replace(/\s+(xlink:)?href\s*=\s*("\s*javascript:[^"]*"|'\s*javascript:[^']*')/gi, '')
+}
+
+/**
+ * Write brand/background.png and brand/favicon.svg. A vector logo (Recraft)
+ * becomes favicon.svg itself; a raster one is saved as brand/logo.png and
+ * embedded in it.
+ */
 export async function generateAiArt(
 	targetDir: string,
 	meta: BrandMeta,
@@ -211,13 +263,17 @@ export async function generateAiArt(
 ): Promise<string[]> {
 	const p = prompts(meta, style)
 	const [logo, background] = await Promise.all([
-		generate(p.logo, '1:1'),
-		generate(p.background, '16:9'),
+		generate(p.logo, '1:1', meta.accent),
+		generate(p.background, '16:9', meta.accent),
 	])
 	const brand = path.join(targetDir, 'brand')
 	await mkdir(brand, { recursive: true })
-	await writeFile(path.join(brand, 'logo.png'), logo)
 	await writeFile(path.join(brand, 'background.png'), background)
+	if (isSvg(logo)) {
+		await writeFile(path.join(brand, 'favicon.svg'), sanitizeSvg(logo.toString('utf8')))
+		return ['brand/background.png', 'brand/favicon.svg']
+	}
+	await writeFile(path.join(brand, 'logo.png'), logo)
 	await writeFile(path.join(brand, 'favicon.svg'), logoFavicon(meta, logo))
 	return ['brand/logo.png', 'brand/background.png', 'brand/favicon.svg']
 }
