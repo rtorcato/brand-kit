@@ -36,6 +36,7 @@ Options:
   --update          init: rewrite generated sources that differ (never favicon.svg)
   --social          init: also write avatar, Instagram post, story, and X, LinkedIn,
                     YouTube and Facebook headers
+  --light           init: also write light-theme banners for the README <picture>
   --ai              init: generate a logo (brand/logo.png, drawn by favicon.svg) and a
                     canvas background (brand/background.png) with an image API,
                     replacing both. Uses the first key set: HF_API_KEY_ID +
@@ -135,6 +136,7 @@ async function main(): Promise<number> {
 			accent: { type: 'string' },
 			update: { type: 'boolean' },
 			social: { type: 'boolean' },
+			light: { type: 'boolean' },
 			ai: { type: 'boolean' },
 			'ai-provider': { type: 'string' },
 			'ai-model': { type: 'string' },
@@ -193,7 +195,12 @@ async function main(): Promise<number> {
 	}
 
 	if (command === 'init') {
-		const opts = { tagline: values.tagline, accent: values.accent, social: values.social }
+		const opts = {
+			tagline: values.tagline,
+			accent: values.accent,
+			social: values.social,
+			light: values.light,
+		}
 		const art: string[] = []
 		if (values.ai) {
 			// Shell env wins over .env: loadEnvFile never overwrites a variable already set.

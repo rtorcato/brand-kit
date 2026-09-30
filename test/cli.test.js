@@ -117,3 +117,16 @@ test('--version prints the package version', () => {
 	const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
 	assert.equal(spawnSync('node', [cli, '--version'], { encoding: 'utf8' }).stdout.trim(), version)
 })
+
+test('--light writes light banners and render.sh lists them; plain init does not', () => {
+	assert.ok(!existsSync(join(repo(), 'brand/banner-light.svg')))
+	const dir = repo()
+	run(dir, '--light')
+	for (const f of ['banner-light', 'banner-mobile-light']) {
+		assert.match(readFileSync(join(dir, `brand/${f}.svg`), 'utf8'), /#ffffff/)
+	}
+	assert.match(
+		readFileSync(join(dir, 'brand/render.sh'), 'utf8'),
+		/^social banner-light 1280 320$/m
+	)
+})
