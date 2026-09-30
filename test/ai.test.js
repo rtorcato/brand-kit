@@ -5,7 +5,7 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { generateAiArt, pickProvider, sanitizeSvg } from '../dist/ai.js'
+import { generateAiArt, pickProvider } from '../dist/ai.js'
 import { generateBrand, renderBrand, resolveBrandMeta } from '../dist/brand.js'
 
 const cli = new URL('../dist/cli.js', import.meta.url).pathname
@@ -163,10 +163,10 @@ test('a failed image download throws instead of saving the error page', async ()
 	)
 })
 
-test('an SVG logo is written as favicon.svg itself, sanitised, with no logo.png', async () => {
+test('a hostile SVG logo is embedded as an <image>, never inlined, with no logo.png', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'brand-kit-ai-'))
 	const svg =
-		'<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" onload="x()"><script>alert(1)</script><a href="javascript:x()"><rect width="64" height="64" onclick=\'y()\'/></a></svg>'
+		'<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" onload="x()"><script>alert(1)</script><a href=javascript:x()><set attributeName="href" to="&#106;avascript:y()"/><rect width="64" height="64"/></a></svg>'
 	const written = await generateAiArt(
 		dir,
 		await resolveBrandMeta({ name: 'v', description: 'x' }, dir),
@@ -174,11 +174,10 @@ test('an SVG logo is written as favicon.svg itself, sanitised, with no logo.png'
 	)
 	assert.deepEqual(written, ['brand/background.png', 'brand/favicon.svg'])
 	const out = readFileSync(join(dir, 'brand/favicon.svg'), 'utf8')
-	assert.equal(
-		out,
-		'<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><a><rect width="64" height="64"/></a></svg>'
-	)
-	assert.equal(sanitizeSvg('<svg><script src="x"/></svg>'), '<svg></svg>')
+	const [, b64svg] = out.match(/<image href="data:image\/svg\+xml;base64,([A-Za-z0-9+/=]+)"/)
+	assert.equal(Buffer.from(b64svg, 'base64').toString('utf8'), svg)
+	// Outside the base64 payload, nothing of the hostile markup survives.
+	assert.doesNotMatch(out.replace(b64svg, ''), /script|javascript|onload|<set|<a[\s>]/i)
 	assert.equal(existsSync(join(dir, 'brand/logo.png')), false)
 })
 

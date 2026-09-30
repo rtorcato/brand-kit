@@ -223,20 +223,23 @@ export function prompts(meta: BrandMeta, style?: string): { logo: string; backgr
 
 /**
  * The logo as brand/favicon.svg: a self-contained SVG (data URI, rounded like
- * the generated tile) so it works as a site favicon too. Shrunk to 256px when
- * rsvg-convert is around, since the raw render is a 1-2 MB PNG.
+ * the generated tile) so it works as a site favicon too. An SVG logo is
+ * embedded as an <image>, never inlined: SVG loaded as an image runs no script,
+ * so a hostile API response can't reach the docs origin. A PNG is shrunk to
+ * 256px when rsvg-convert is around, since the raw render is a 1-2 MB PNG.
  */
-function logoFavicon(meta: BrandMeta, png: Buffer): string {
+function logoFavicon(meta: BrandMeta, logo: Buffer): string {
+	const mime = isSvg(logo) ? 'image/svg+xml' : 'image/png'
 	const svg = (
 		b64: string
 	): string => `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
 	<title>${meta.name.replace(/[<&"]/g, '')}</title>
 	<clipPath id="tile"><rect width="32" height="32" rx="8"/></clipPath>
-	<image href="data:image/png;base64,${b64}" width="32" height="32" clip-path="url(#tile)" preserveAspectRatio="xMidYMid slice"/>
+	<image href="data:${mime};base64,${b64}" width="32" height="32" clip-path="url(#tile)" preserveAspectRatio="xMidYMid slice"/>
 </svg>
 `
-	const full = svg(png.toString('base64'))
-	if (spawnSync('rsvg-convert', ['--version']).error) return full
+	const full = svg(logo.toString('base64'))
+	if (mime !== 'image/png' || spawnSync('rsvg-convert', ['--version']).error) return full
 	const small = execFileSync('rsvg-convert', ['-w', '256', '-h', '256'], { input: full })
 	return svg(small.toString('base64'))
 }
@@ -245,22 +248,8 @@ const isSvg = (b: Buffer): boolean =>
 	/^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(b.subarray(0, 1024).toString('utf8'))
 
 /**
- * An API's SVG, made safe to serve as a favicon: no scripts, event handlers,
- * foreignObject or javascript: links. The viewBox and drawing are untouched.
- * ponytail: regex, not a parser; fine for generator output, not hostile input at large.
- */
-export function sanitizeSvg(svg: string): string {
-	return svg
-		.replace(/<(script|foreignObject)\b[\s\S]*?<\/\1\s*>/gi, '')
-		.replace(/<(script|foreignObject)\b[^>]*\/>/gi, '')
-		.replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-		.replace(/\s+(xlink:)?href\s*=\s*("\s*javascript:[^"]*"|'\s*javascript:[^']*')/gi, '')
-}
-
-/**
- * Write brand/background.png and brand/favicon.svg. A vector logo (Recraft)
- * becomes favicon.svg itself; a raster one is saved as brand/logo.png and
- * embedded in it.
+ * Write brand/background.png and brand/favicon.svg, which embeds the logo. A
+ * raster logo is also saved as brand/logo.png; a vector one (Recraft) is not.
  */
 export async function generateAiArt(
 	targetDir: string,
@@ -276,11 +265,8 @@ export async function generateAiArt(
 	const brand = path.join(targetDir, 'brand')
 	await mkdir(brand, { recursive: true })
 	await writeFile(path.join(brand, 'background.png'), background)
-	if (isSvg(logo)) {
-		await writeFile(path.join(brand, 'favicon.svg'), sanitizeSvg(logo.toString('utf8')))
-		return ['brand/background.png', 'brand/favicon.svg']
-	}
-	await writeFile(path.join(brand, 'logo.png'), logo)
 	await writeFile(path.join(brand, 'favicon.svg'), logoFavicon(meta, logo))
+	if (isSvg(logo)) return ['brand/background.png', 'brand/favicon.svg']
+	await writeFile(path.join(brand, 'logo.png'), logo)
 	return ['brand/logo.png', 'brand/background.png', 'brand/favicon.svg']
 }
