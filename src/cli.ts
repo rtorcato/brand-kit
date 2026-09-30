@@ -6,11 +6,15 @@ import { parseArgs } from 'node:util'
 import { generateAiArt, pickProvider } from './ai.js'
 import {
 	addReadmeBanner,
+	bannerMobileSvg,
+	bannerSvg,
 	generateBrand,
 	RENDERS,
 	renderBrand,
 	resolveBrandMeta,
 	DOCS_ASSETS,
+	SOCIAL,
+	socialCardSvg,
 	syncBrandToDocs,
 } from './brand.js'
 import { exists, read } from './fs.js'
@@ -23,7 +27,7 @@ Commands:
   init     (default) Write brand/ SVG sources + render.sh, render PNGs when
            rsvg-convert is installed, add the README banner
   render   Re-render stale PNGs and favicon.ico from brand/*.svg
-  doctor   Report missing sources, stale PNGs and a README without the banner
+  doctor   Report missing or drifted sources, stale PNGs and a README without the banner
            (exit 1 when a source is missing; with --strict, on any warning too)
 
 Options:
@@ -33,6 +37,7 @@ Options:
   --update          init: rewrite generated sources that differ (never favicon.svg)
   --social          init: also write avatar, Instagram post, story, and X, LinkedIn,
                     YouTube and Facebook headers
+  --light           init: also write light-theme banners for the README <picture>
   --ai              init: generate a logo (brand/logo.png, drawn by favicon.svg) and a
                     canvas background (brand/background.png) with an image API,
                     replacing both. Uses the first key set: HF_API_KEY_ID +
@@ -53,8 +58,12 @@ const SOURCES = ['favicon.svg', 'banner.svg', 'banner-mobile.svg', 'social-card.
 
 type Check = { check: string; status: 'ok' | 'warn' | 'fail'; detail?: string }
 
-/** Read-only. A missing source fails; a missing or stale render and a bannerless README warn. */
-async function doctor(dir: string): Promise<Check[]> {
+/** Read-only. A missing source fails; a missing or stale render, a drifted source and a bannerless README warn. */
+async function doctor(
+	dir: string,
+	pkg: Record<string, unknown> | null,
+	opts: { tagline?: string; accent?: string }
+): Promise<Check[]> {
 	const at = (rel: string): string => path.join(dir, 'brand', rel)
 	const mtime = async (f: string): Promise<number> => (await stat(f)).mtimeMs
 	const checks: Check[] = []
@@ -64,6 +73,23 @@ async function doctor(dir: string): Promise<Check[]> {
 				? { check: `brand/${f}`, status: 'ok' }
 				: { check: `brand/${f}`, status: 'fail', detail: 'missing — run `brand-kit`' }
 		)
+	}
+	// Regenerate in memory; favicon.svg is skipped because hand edits there are expected.
+	const meta = await resolveBrandMeta(pkg, dir, opts)
+	const canvases: Array<[string, string]> = [
+		['banner.svg', bannerSvg(meta)],
+		['banner-mobile.svg', bannerMobileSvg(meta)],
+		['social-card.svg', socialCardSvg(meta)],
+		...SOCIAL.map(([stem, , , svg]): [string, string] => [`${stem}.svg`, svg(meta)]),
+	]
+	for (const [f, expected] of canvases) {
+		if ((await exists(at(f))) && (await read(at(f))) !== expected) {
+			checks.push({
+				check: `brand/${f}`,
+				status: 'warn',
+				detail: 'differs from the current brand meta — run `brand-kit --update`',
+			})
+		}
 	}
 	for (const [src, out] of RENDERS) {
 		if (!(await exists(at(src)))) continue
@@ -125,6 +151,7 @@ async function main(): Promise<number> {
 			accent: { type: 'string' },
 			update: { type: 'boolean' },
 			social: { type: 'boolean' },
+			light: { type: 'boolean' },
 			ai: { type: 'boolean' },
 			'ai-provider': { type: 'string' },
 			'ai-model': { type: 'string' },
@@ -183,7 +210,12 @@ async function main(): Promise<number> {
 	}
 
 	if (command === 'init') {
-		const opts = { tagline: values.tagline, accent: values.accent, social: values.social }
+		const opts = {
+			tagline: values.tagline,
+			accent: values.accent,
+			social: values.social,
+			light: values.light,
+		}
 		const art: string[] = []
 		if (values.ai) {
 			// Shell env wins over .env: loadEnvFile never overwrites a variable already set.
@@ -211,7 +243,7 @@ async function main(): Promise<number> {
 		return 0
 	}
 	if (command === 'doctor') {
-		const checks = await doctor(dir)
+		const checks = await doctor(dir, pkg, { tagline: values.tagline, accent: values.accent })
 		const failed = checks.filter(
 			(c) => c.status === 'fail' || (values.strict && c.status === 'warn')
 		).length
