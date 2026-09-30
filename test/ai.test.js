@@ -233,3 +233,39 @@ test('--ai without any key exits 1 and names the env vars', () => {
 	assert.equal(res.status, 1)
 	assert.match(res.stderr, /HF_API_KEY_ID/)
 })
+
+// 1×1 JPEG (same black pixel as PNG). Cloudflare's FLUX returns JPEG.
+const JPEG = Buffer.from(
+	'/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZgAATU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAAaADAAQAAAABAAAAAQAAAAD/7QA4UGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAAA4QklNBCUAAAAAABDUHYzZjwCyBOmACZjs+EJ+/8AAEQgAAQABAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/bAEMAAgICAgICAwICAwUDAwMFBgUFBQUGCAYGBgYGCAoICAgICAgKCgoKCgoKCgwMDAwMDA4ODg4ODw8PDw8PDw8PD//bAEMBAgICBAQEBwQEBxALCQsQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEP/dAAQAAf/aAAwDAQACEQMRAD8A/Syiiiv5XP4rP//Z',
+	'base64'
+)
+
+test('a JPEG logo is embedded as JPEG, not mislabelled PNG, and never renders blank', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'brand-kit-ai-'))
+	await generateAiArt(
+		dir,
+		await resolveBrandMeta({ name: 'j', description: 'x' }, dir),
+		async () => JPEG
+	)
+	const out = readFileSync(join(dir, 'brand/favicon.svg'), 'utf8')
+	const [, type, data] = out.match(/href="data:(image\/[a-z+]+);base64,([A-Za-z0-9+/=]+)"/)
+	if (spawnSync('rsvg-convert', ['--version']).error) {
+		assert.equal(type, 'image/jpeg')
+		return
+	}
+	// Shrunk through rsvg-convert: a real PNG, and the pixel survives (a mislabelled
+	// JPEG decodes to nothing, leaving a fully transparent image).
+	assert.equal(type, 'image/png')
+	const png = Buffer.from(data, 'base64')
+	assert.equal(png.subarray(1, 4).toString('latin1'), 'PNG')
+	const probe = spawnSync('rsvg-convert', ['-w', '1', '-h', '1', '-f', 'png'], {
+		input: `<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="#fff"/><image href="data:image/png;base64,${data}" width="1" height="1"/></svg>`,
+	})
+	assert.notDeepEqual(
+		probe.stdout,
+		spawnSync('rsvg-convert', ['-w', '1', '-h', '1', '-f', 'png'], {
+			input:
+				'<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="#fff"/></svg>',
+		}).stdout
+	)
+})

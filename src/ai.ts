@@ -266,24 +266,36 @@ export function prompts(meta: BrandMeta, style?: string): { logo: string; backgr
  * The logo as brand/favicon.svg: a self-contained SVG (data URI, rounded like
  * the generated tile) so it works as a site favicon too. An SVG logo is
  * embedded as an <image>, never inlined: SVG loaded as an image runs no script,
- * so a hostile API response can't reach the docs origin. A PNG is shrunk to
- * 256px when rsvg-convert is around, since the raw render is a 1-2 MB PNG.
+ * so a hostile API response can't reach the docs origin. A raster logo is
+ * shrunk to a 256px PNG when rsvg-convert is around, since the raw render is
+ * 1-2 MB. Its type is read from the bytes: Cloudflare's FLUX returns JPEG, and
+ * JPEG labelled image/png renders blank.
  */
 function logoFavicon(meta: BrandMeta, logo: Buffer): string {
-	const mime = isSvg(logo) ? 'image/svg+xml' : 'image/png'
+	const mime = isSvg(logo) ? 'image/svg+xml' : rasterMime(logo)
 	const svg = (
+		type: string,
 		b64: string
 	): string => `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
 	<title>${meta.name.replace(/[<&"]/g, '')}</title>
 	<clipPath id="tile"><rect width="32" height="32" rx="8"/></clipPath>
-	<image href="data:${mime};base64,${b64}" width="32" height="32" clip-path="url(#tile)" preserveAspectRatio="xMidYMid slice"/>
+	<image href="data:${type};base64,${b64}" width="32" height="32" clip-path="url(#tile)" preserveAspectRatio="xMidYMid slice"/>
 </svg>
 `
-	const full = svg(logo.toString('base64'))
-	if (mime !== 'image/png' || spawnSync('rsvg-convert', ['--version']).error) return full
+	const full = svg(mime, logo.toString('base64'))
+	if (mime === 'image/svg+xml' || spawnSync('rsvg-convert', ['--version']).error) return full
 	const small = execFileSync('rsvg-convert', ['-w', '256', '-h', '256'], { input: full })
-	return svg(small.toString('base64'))
+	return svg('image/png', small.toString('base64'))
 }
+
+/** A raster image's media type from its magic bytes; PNG when unrecognised. */
+const rasterMime = (b: Buffer): string =>
+	b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff
+		? 'image/jpeg'
+		: b.subarray(0, 4).toString('latin1') === 'RIFF' &&
+				b.subarray(8, 12).toString('latin1') === 'WEBP'
+			? 'image/webp'
+			: 'image/png'
 
 const isSvg = (b: Buffer): boolean =>
 	/^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(b.subarray(0, 1024).toString('utf8'))
