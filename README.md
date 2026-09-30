@@ -86,10 +86,17 @@ npx @rtorcato/brand-kit --ai --ai-provider gemini --ai-prompt "neon line art"
 | `gemini` | `GEMINI_API_KEY` | `gemini-2.5-flash-image` |
 | `leonardo` | `LEONARDO_API_KEY` | Phoenix 1.0 (`de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3`) |
 | `recraft` | `RECRAFT_API_TOKEN` | `recraftv3` (vector logo) |
+| `cloudflare` | `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` | `@cf/black-forest-labs/flux-1-schnell` |
 
 Keys come from the shell or a `.env` in the target repo; the shell wins, and
 brand-kit warns if that `.env` is not gitignored. `--ai-model` overrides the
 model.
+
+`cloudflare` (Workers AI) is the cheapest: FLUX.1 schnell fits a run inside
+the free daily allowance. It is checked last, since `CLOUDFLARE_API_TOKEN` is
+often a deploy token; its token needs the **Workers AI** permission (create one
+at [dash.cloudflare.com → API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+from the "Workers AI" template).
 
 The art is saved as sources: `brand/logo.png`, `brand/background.png`, and a
 self-contained `brand/favicon.svg` that embeds the logo (with `recraft`, the

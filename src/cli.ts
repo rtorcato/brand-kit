@@ -45,8 +45,10 @@ Options:
                     replacing both. Uses the first key set: HF_API_KEY_ID +
                     HF_API_KEY_SECRET (Higgsfield), OPENAI_API_KEY, GEMINI_API_KEY,
                     LEONARDO_API_KEY, RECRAFT_API_TOKEN (vector logo),
+                    CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN (checked last),
                     from the shell or the repo's .env
-  --ai-provider <p> init: higgsfield, openai, gemini, leonardo or recraft instead of the first key found
+  --ai-provider <p> init: higgsfield, openai, gemini, leonardo, recraft or cloudflare
+                    instead of the first key found
   --ai-model <id>   init: override the provider's default model
   --ai-prompt <txt> init: style hint added to both prompts, e.g. "neon line art"
   --strict          doctor: exit 1 on warnings (stale renders, bannerless README) too
