@@ -9,6 +9,7 @@ npx @rtorcato/brand-kit --ai --ai-provider higgsfield --ai-prompt "flat geometri
 ```
 
 - **Provider:** `higgsfield`, default model `higgsfield-ai/soul/v2/standard`. Override with `--ai-model`.
+- **Get a key:** [Higgsfield Cloud](https://cloud.higgsfield.ai) — create a credential; it gives a key ID and a secret.
 - **Key:** `HF_API_KEY_ID` + `HF_API_KEY_SECRET` (or `HF_KEY=id:secret`), read from this folder's `.env` (gitignored) or the shell.
 - **Style:** `--ai-prompt` is the same in every `ai-*` example, so the
   three differ only by provider.

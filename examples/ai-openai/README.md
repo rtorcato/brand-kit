@@ -9,6 +9,7 @@ npx @rtorcato/brand-kit --ai --ai-provider openai --ai-prompt "flat geometric li
 ```
 
 - **Provider:** `openai`, default model `gpt-image-1`. Override with `--ai-model`.
+- **Get a key:** [the OpenAI platform](https://platform.openai.com/api-keys) — create a secret key; image generation needs billing enabled.
 - **Key:** `OPENAI_API_KEY`, read from this folder's `.env` (gitignored) or the shell.
 - **Style:** `--ai-prompt` is the same in every `ai-*` example, so the
   three differ only by provider.

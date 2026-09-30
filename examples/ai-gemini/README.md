@@ -9,6 +9,7 @@ npx @rtorcato/brand-kit --ai --ai-provider gemini --ai-prompt "flat geometric li
 ```
 
 - **Provider:** `gemini`, default model `gemini-2.5-flash-image`. Override with `--ai-model`.
+- **Get a key:** [Google AI Studio](https://aistudio.google.com/apikey) — create an API key.
 - **Key:** `GEMINI_API_KEY`, read from this folder's `.env` (gitignored) or the shell.
 - **Style:** `--ai-prompt` is the same in every `ai-*` example, so the
   three differ only by provider.
