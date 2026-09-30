@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.7",
-    "@rtorcato/repo-tooling": "^5.0.0",
+    "@rtorcato/repo-tooling": "^5.0.1",
     "@types/node": "^26.6.2",
     "publint": "^0.3.23",
     "semantic-release": "^25.0.8",
