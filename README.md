@@ -74,6 +74,7 @@ npx @rtorcato/brand-kit --ai --ai-provider gemini --ai-prompt "neon line art"
 | `higgsfield` | `HF_API_KEY_ID` + `HF_API_KEY_SECRET` (or `HF_KEY=id:secret`) | `higgsfield-ai/soul/v2/standard` |
 | `openai` | `OPENAI_API_KEY` | `gpt-image-1` |
 | `gemini` | `GEMINI_API_KEY` | `gemini-2.5-flash-image` |
+| `leonardo` | `LEONARDO_API_KEY` | Phoenix 1.0 (`de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3`) |
 
 Keys come from the shell or a `.env` in the target repo; the shell wins, and
 brand-kit warns if that `.env` is not gitignored. `--ai-model` overrides the

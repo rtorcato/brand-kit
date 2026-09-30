@@ -42,8 +42,9 @@ Options:
                     canvas background (brand/background.png) with an image API,
                     replacing both. Uses the first key set: HF_API_KEY_ID +
                     HF_API_KEY_SECRET (Higgsfield), OPENAI_API_KEY, GEMINI_API_KEY,
+                    LEONARDO_API_KEY,
                     from the shell or the repo's .env
-  --ai-provider <p> init: higgsfield, openai or gemini instead of the first key found
+  --ai-provider <p> init: higgsfield, openai, gemini or leonardo instead of the first key found
   --ai-model <id>   init: override the provider's default model
   --ai-prompt <txt> init: style hint added to both prompts, e.g. "neon line art"
   --strict          doctor: exit 1 on warnings (stale renders, bannerless README) too

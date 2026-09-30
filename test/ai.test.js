@@ -84,6 +84,57 @@ test('a failed request reports the status, not the key', async () => {
 	)
 })
 
+/** Run `fn` with setTimeout firing immediately, so poll loops don't wait. */
+async function fastTimers(fn) {
+	const t = globalThis.setTimeout
+	globalThis.setTimeout = (cb) => t(cb, 0)
+	try {
+		return await fn()
+	} finally {
+		globalThis.setTimeout = t
+	}
+}
+
+test('leonardo is picked by LEONARDO_API_KEY and polls v1 until COMPLETE', async () => {
+	assert.throws(() => pickProvider(undefined, undefined, {}), /LEONARDO_API_KEY/)
+	let polls = 0
+	const calls = mockFetch((url) => {
+		if (url.endsWith('/v1/generations/g1'))
+			return ++polls < 2
+				? { generations_by_pk: { status: 'PENDING' } }
+				: {
+						generations_by_pk: {
+							status: 'COMPLETE',
+							generated_images: [{ url: 'https://cdn.test/l.png' }],
+						},
+					}
+		if (url === 'https://cdn.test/l.png') return PNG
+		return { sdGenerationJob: { generationId: 'g1' } }
+	})
+	const gen = pickProvider(undefined, undefined, { LEONARDO_API_KEY: 'lk' })
+	assert.deepEqual(await fastTimers(() => gen('p', '16:9')), PNG)
+	assert.equal(calls[0].url, 'https://cloud.leonardo.ai/api/rest/v1/generations')
+	assert.equal(calls[0].init.headers.Authorization, 'Bearer lk')
+	assert.match(calls[0].init.body, /"width":1536,"height":864/)
+	assert.equal(polls, 2)
+})
+
+test('leonardo sends a named model to v2 and reports a failed generation', async () => {
+	const calls = mockFetch((url) =>
+		url.includes('/v1/generations/')
+			? { generations_by_pk: { status: 'FAILED' } }
+			: { generate: { generationId: 'g2' } }
+	)
+	const gen = pickProvider('leonardo', 'gpt-image-1.5', { LEONARDO_API_KEY: 'secret-key' })
+	await assert.rejects(
+		fastTimers(() => gen('p', '1:1')),
+		(e) => /FAILED/.test(e.message) && !/secret-key/.test(e.message)
+	)
+	assert.equal(calls[0].url, 'https://cloud.leonardo.ai/api/rest/v2/generations')
+	assert.match(calls[0].init.body, /"model":"gpt-image-1.5"/)
+	assert.equal(calls[1].url, 'https://cloud.leonardo.ai/api/rest/v1/generations/g2')
+})
+
 test('generated art becomes the favicon and every canvas background, and renders', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'brand-kit-ai-'))
 	const pkg = { name: 'ai-lib', description: 'x' }

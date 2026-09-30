@@ -20,10 +20,15 @@ npx @rtorcato/brand-kit --ai --ai-provider gemini --ai-prompt "neon line art"
 | `higgsfield` | `HF_API_KEY_ID` + `HF_API_KEY_SECRET` (or `HF_KEY=id:secret`) | `higgsfield-ai/soul/v2/standard` |
 | `openai` | `OPENAI_API_KEY` | `gpt-image-1` |
 | `gemini` | `GEMINI_API_KEY` | `gemini-2.5-flash-image` |
+| `leonardo` | `LEONARDO_API_KEY` | Phoenix 1.0 (`de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3`) |
 
 Without `--ai-provider`, brand-kit uses the first provider in that order whose
 key is set. `--ai-model` overrides the model, and `--ai-prompt` adds a style
 hint to both the logo and background prompts.
+
+For Leonardo, a UUID `--ai-model` is a v1 model ID (as listed in Leonardo's
+platform models), and anything else is a v2 model name such as
+`gpt-image-1.5`; generations are polled on v1 either way.
 
 Keys come from the shell or a `.env` in the target repo; the shell wins.
 brand-kit warns if that `.env` is not gitignored.
