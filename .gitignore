@@ -6,3 +6,5 @@ apps/docs/build/
 apps/docs/.docusaurus/
 apps/docs/docs/changelog.md
 .env
+# Local test runs; see examples/ai-cloudflare/README.md.
+examples/*/test-brand/
