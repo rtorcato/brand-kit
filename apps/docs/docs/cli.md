@@ -26,6 +26,7 @@ npx @rtorcato/brand-kit [init|render|doctor] [options]
 | `--accent <hex>` | `init` | Accent colour as `#rrggbb`. See [Configuration](./configuration.md#accent). |
 | `--update` | `init` | Rewrite generated sources that differ. Never touches `favicon.svg`. |
 | `--social` | `init` | Also write the [social images](./outputs.md#social-images). |
+| `--light` | `init` | Also write `banner-light` and `banner-mobile-light`, and add them to the README `<picture>` for GitHub's light theme. |
 | `--ai` | `init` | Generate a logo and background. See [AI artwork](./ai-artwork.md). |
 | `--ai-provider <p>` | `init` | `higgsfield`, `openai` or `gemini` instead of the first key found. |
 | `--ai-model <id>` | `init` | Override the provider's default model. |
