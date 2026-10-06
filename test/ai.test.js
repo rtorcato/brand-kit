@@ -173,10 +173,22 @@ test('cloudflare is checked last, decodes base64 JSON and raw bytes, and explain
 	const model = '@cf/leonardo/phoenix-1.0'
 	assert.deepEqual(await pickProvider('cloudflare', model, cf)('p', '16:9'), PNG)
 	assert.match(calls[0].init.body, /"width":1536,"height":864/)
-	globalThis.fetch = async () => Response.json({ success: false }, { status: 403 })
+	// Test 401 with malformed token error (code 9109): no Workers AI hint.
+	globalThis.fetch = async () =>
+		Response.json({ errors: [{ code: 9109, message: 'Invalid access token' }] }, { status: 401 })
 	await assert.rejects(
 		pickProvider('cloudflare', undefined, cf)('p', '1:1'),
-		(e) => /403.*Workers AI permission/.test(e.message) && !/secret-token/.test(e.message)
+		(e) => /401 \(9109 Invalid access token\)/.test(e.message) && !/Workers AI/.test(e.message)
+	)
+	// Test 403 with permission error (code 10000): includes Workers AI hint.
+	globalThis.fetch = async () =>
+		Response.json(
+			{ errors: [{ code: 10000, message: 'Authentication error' }] },
+			{ status: 403 }
+		)
+	await assert.rejects(
+		pickProvider('cloudflare', undefined, cf)('p', '1:1'),
+		(e) => /403 \(10000 Authentication error\).*Workers AI permission/.test(e.message)
 	)
 })
 

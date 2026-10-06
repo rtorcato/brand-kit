@@ -220,10 +220,22 @@ export const PROVIDERS: Record<string, Provider> = {
 						body: JSON.stringify({ prompt, ...size }),
 					}
 				)
-				if (res.status === 401 || res.status === 403)
-					throw new Error(
-						`cloudflare: HTTP ${res.status}: CLOUDFLARE_API_TOKEN needs the Workers AI permission (a deploy-only token is refused). Create one from the "Workers AI" template at https://dash.cloudflare.com/profile/api-tokens`
-					)
+				if (res.status === 401 || res.status === 403) {
+					const body = await res.text()
+					let msg = `cloudflare: HTTP ${res.status}`
+					try {
+						const err = JSON.parse(body)
+						const code = err.errors?.[0]?.code
+						const message = err.errors?.[0]?.message
+						if (code && message) {
+							msg += ` (${code} ${message})`
+							if (code === 10000)
+								msg +=
+									'. CLOUDFLARE_API_TOKEN needs the Workers AI permission (a deploy-only token is refused). Create one from the "Workers AI" template at https://dash.cloudflare.com/profile/api-tokens'
+						}
+					} catch {}
+					throw new Error(msg)
+				}
 				if (!res.headers.get('content-type')?.includes('json')) {
 					if (!res.ok) throw new Error(`cloudflare: HTTP ${res.status}`)
 					return Buffer.from(await res.arrayBuffer())
