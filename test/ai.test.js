@@ -178,7 +178,7 @@ test('cloudflare is checked last, decodes base64 JSON and raw bytes, and explain
 		Response.json({ errors: [{ code: 9109, message: 'Invalid access token' }] }, { status: 401 })
 	await assert.rejects(
 		pickProvider('cloudflare', undefined, cf)('p', '1:1'),
-		(e) => /401 \(9109 Invalid access token\)/.test(e.message) && !/Workers AI/.test(e.message)
+		(e) => /401 \(9109 Invalid access token\)/.test(e.message) && !/Workers AI/.test(e.message) && !/secret-token/.test(e.message)
 	)
 	// Test 403 with permission error (code 10000): includes Workers AI hint.
 	globalThis.fetch = async () =>
