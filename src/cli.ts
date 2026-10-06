@@ -10,6 +10,7 @@ import {
 	bannerMobileSvg,
 	bannerSvg,
 	generateBrand,
+	RENDER_SH,
 	RENDERS,
 	renderBrand,
 	resolveBrandMeta,
@@ -94,6 +95,14 @@ async function doctor(
 				detail: 'differs from the current brand meta — run `brand-kit --update`',
 			})
 		}
+	}
+	// An older render.sh can run npx through backticks in its skip message (#72).
+	if ((await exists(at('render.sh'))) && (await read(at('render.sh'))) !== RENDER_SH) {
+		checks.push({
+			check: 'brand/render.sh',
+			status: 'warn',
+			detail: 'differs from the current template — run `brand-kit --update`',
+		})
 	}
 	const stale = new Set((await staleRenders(path.join(dir, 'brand'))).map(([, out]) => out))
 	for (const [src, out] of RENDERS) {

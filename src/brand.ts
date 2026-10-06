@@ -395,7 +395,8 @@ if command -v magick >/dev/null 2>&1; then
 	magick -background none brand/favicon.svg -define icon:auto-resize=16,32 brand/favicon.ico
 	echo "rendered: brand/favicon.ico"
 else
-	echo "skipped brand/favicon.ico: needs ImageMagick (\`magick\`) or \`npx @rtorcato/brand-kit render\`" >&2
+	# Single quotes: in double quotes the backticks would run npx (#72).
+	echo 'skipped brand/favicon.ico: needs ImageMagick (\`magick\`) or \`npx @rtorcato/brand-kit render\`' >&2
 fi
 
 # The docs site gets copies (never overwritten), like \`brand-kit\`'s docs sync.
