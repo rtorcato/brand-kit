@@ -77,6 +77,36 @@ test('doctor warns when a source drifts from the current brand meta, but not for
 	)
 })
 
+test('render.sh prints its skip message without running npx; doctor flags and --update fixes an old one (#72)', () => {
+	const dir = repo()
+	run(dir)
+	const script = join(dir, 'brand/render.sh')
+	// Fake rsvg-convert and npx on a PATH with no ImageMagick, so the skip branch runs.
+	const bin = mkdtempSync(join(tmpdir(), 'brand-kit-bin-'))
+	writeFileSync(join(bin, 'rsvg-convert'), '#!/bin/sh\nexit 0\n', { mode: 0o755 })
+	writeFileSync(join(bin, 'npx'), '#!/bin/sh\necho NPX-RAN >&2\n', { mode: 0o755 })
+	const PATH = `${bin}:/usr/bin:/bin`
+	const hasMagick = spawnSync('sh', ['-c', 'command -v magick'], { env: { PATH } }).status === 0
+	if (!hasMagick) {
+		const res = spawnSync('bash', [script], { encoding: 'utf8', env: { PATH } })
+		assert.equal(res.status, 0)
+		assert.doesNotMatch(res.stderr, /NPX-RAN/)
+		assert.match(res.stderr, /needs ImageMagick \(`magick`\) or `npx @rtorcato\/brand-kit render`/)
+	}
+
+	const fixed = readFileSync(script, 'utf8')
+	const flagged = () =>
+		JSON.parse(run(dir, 'doctor', '--json').stdout).checks.some(
+			(c) => c.check === 'brand/render.sh' && c.status === 'warn'
+		)
+	assert.equal(flagged(), false)
+	writeFileSync(script, fixed.replace(/echo '(skipped brand\/favicon\.ico[^']*)'/, 'echo "$1"'))
+	assert.equal(flagged(), true)
+	run(dir, '--update')
+	assert.equal(readFileSync(script, 'utf8'), fixed)
+	assert.equal(flagged(), false)
+})
+
 test('a repo with a docs site gets the favicon copied into static/img', () => {
 	const dir = repo()
 	mkdirSync(join(dir, 'apps/docs'), { recursive: true })
