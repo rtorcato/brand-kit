@@ -188,7 +188,7 @@ test('cloudflare is checked last, decodes base64 JSON and raw bytes, and explain
 		)
 	await assert.rejects(
 		pickProvider('cloudflare', undefined, cf)('p', '1:1'),
-		(e) => /403 \(10000 Authentication error\).*Workers AI permission/.test(e.message)
+		(e) => /403 \(10000 Authentication error\).*Workers AI permission/.test(e.message) && !/secret-token/.test(e.message)
 	)
 })
 
