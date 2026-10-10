@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>brand-kit docs — landing mockup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+/* Shared-docs tokens (theme-tokens.css), brand-kit accent overrides. */
+:root{
+  --accent:#4d7c0f; --on-accent:#fff;            /* light: lime-700, 5.0:1 on white */
+  --accent-soft:color-mix(in srgb,var(--accent) 12%,transparent);
+  --accent-border:color-mix(in srgb,var(--accent) 40%,transparent);
+  --bg:#fff; --bg2:#f6f8fb; --surface:#fff; --surface2:#f3f6f9; --code:#f3f6f9;
+  --border:rgba(12,18,28,.1); --border2:rgba(12,18,28,.16);
+  --heading:#0a0e16; --text:#374253; --muted:#5b6675; --faint:#8a95a5;
+  --shadow:0 22px 50px -26px rgba(20,28,44,.3);
+}
+[data-theme=dark]{
+  --accent:#a3e635; --on-accent:#0a0e16;
+  --bg:#0a0e16; --bg2:#0d131d; --surface:#111824; --surface2:#161f2e; --code:#0d131d;
+  --border:rgba(255,255,255,.08); --border2:rgba(255,255,255,.14);
+  --heading:#fff; --text:#dfe5ee; --muted:#9aa6b8; --faint:#6b778a;
+  --shadow:0 24px 60px -30px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 Geist,system-ui,sans-serif}
+code,.mono{font-family:"Geist Mono",ui-monospace,monospace}
+a{color:var(--accent);text-decoration:none}
+/* Navbar (Infima) */
+.nav{height:60px;display:flex;align-items:center;gap:24px;padding:0 16px;border-bottom:1px solid var(--border);background:var(--bg)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--heading)}
+.brand img{width:26px;height:26px;border-radius:7px}
+.nav .l{color:var(--text);font-weight:500;font-size:15px}
+.sp{flex:1}.search{width:200px;height:32px;border-radius:99px;background:var(--surface2);color:var(--faint);font-size:14px;display:flex;align-items:center;padding:0 12px}
+/* Hero */
+.hero{position:relative;overflow:hidden;padding:64px 24px 48px;text-align:center}
+.glow{position:absolute;top:-140px;left:50%;transform:translateX(-50%);width:960px;height:560px;background:radial-gradient(closest-side,var(--accent-soft),transparent 70%);pointer-events:none}
+.mark{width:64px;height:64px;border-radius:16px;margin:0 auto 18px;display:block;box-shadow:var(--shadow)}
+.wm{font-size:64px;font-weight:800;letter-spacing:-.04em;line-height:1;margin:0 0 16px;color:var(--heading)}
+.wm span{color:var(--accent)}
+.tag{font-size:19px;color:var(--heading);margin:0 0 4px;font-weight:500}
+.tag2{font-size:16px;color:var(--muted);margin:0 0 36px}
+.preview{position:relative;max-width:880px;margin:0 auto;border:1px solid var(--border2);border-radius:16px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
+.preview .bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--faint)}
+.dots i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--border2);margin-right:5px}
+.preview img{display:block;width:100%}
+.preview .cap{position:absolute;right:12px;bottom:12px;font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(10,14,22,.75);color:#dfe5ee}
+.actions{display:flex;flex-direction:column;align-items:center;gap:20px;margin-top:32px}
+.btns{display:flex;gap:14px}
+.btn{font-weight:700;font-size:17px;padding:11px 26px;border-radius:11px;border:1px solid transparent}
+.btn.p{background:var(--accent);color:var(--on-accent)}
+.btn.s{border-color:var(--border2);color:var(--heading)}
+.cmd{display:flex;align-items:center;justify-content:space-between;gap:24px;min-width:420px;padding:12px 14px 12px 18px;border:1px solid var(--border2);border-radius:12px;background:var(--code);font-size:14px;color:var(--heading)}
+.cmd .d{color:var(--faint);margin-right:10px}.copy{width:30px;height:30px;border-radius:8px;border:1px solid var(--border2);display:grid;place-items:center;color:var(--muted)}
+.hint{font-size:13px;color:var(--faint);margin-top:-8px}
+/* Sections */
+.sec{max-width:1200px;margin:0 auto;padding:56px 24px 8px}
+.h2{font-size:30px;font-weight:800;letter-spacing:-.02em;color:var(--heading);margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 24px}
+.head{display:flex;justify-content:space-between;align-items:flex-end}
+.more{font-size:14px;font-weight:600;border:1px solid var(--accent-border);padding:6px 12px;border-radius:9px}
+/* Outputs gallery */
+.gal{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:auto auto;gap:16px}
+.tile{border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden}
+.tile .img{background:var(--bg2);display:grid;place-items:center;padding:16px}
+.tile .img img{max-width:100%;border-radius:8px;display:block}
+.tile .meta{display:flex;justify-content:space-between;align-items:baseline;padding:12px 16px;border-top:1px solid var(--border)}
+.tile .n{font-weight:700;color:var(--heading);font-size:15px}.tile .n code{font-size:13px;color:var(--muted);font-weight:500;margin-left:6px}
+.tile .s{font-size:12px;color:var(--faint)}
+.t-social{grid-column:1;grid-row:1/3}.fav{display:flex;gap:18px;align-items:end;justify-content:center;padding:22px}
+.fav img{border-radius:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}
+.chip{font-family:"Geist Mono";font-size:12px;padding:4px 9px;border-radius:7px;background:var(--surface2);border:1px solid var(--border);color:var(--text)}
+.chips .lbl{font-size:13px;color:var(--muted);margin-right:4px}
+/* UseWithAI (shared component, shown for shape) */
+.ai{border:1px solid var(--border2);border-radius:14px;background:var(--surface);padding:18px 18px 16px;margin-bottom:12px}
+.ai b{color:var(--heading);font-size:15px}.ai p{margin:2px 0 12px;font-size:13px;color:var(--muted)}
+.ai .row{display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-family:"Geist Mono";font-size:13px;color:var(--heading)}
+.ai .row+.row{margin-top:-1px;border-top-left-radius:0;border-top-right-radius:0}
+/* Pillars */
+.pills{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.pill{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:20px}
+.pi{width:36px;height:36px;border-radius:9px;background:var(--accent-soft);border:1px solid var(--accent-border);display:grid;place-items:center;color:var(--accent);margin-bottom:14px}
+.pt{font-weight:700;color:var(--heading);font-size:15px;margin-bottom:4px}.pd{font-size:13px;color:var(--muted);line-height:1.5}
+/* Siblings */
+.sib{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{border:1px solid var(--border);border-left:3px solid var(--a);border-radius:16px;background:var(--surface);padding:20px 22px}
+.card .h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.card .n{font-weight:700;color:var(--a)}.card .d{font-size:12px;color:color-mix(in srgb,var(--a) 75%,var(--faint))}
+.card p{margin:0;font-size:13px;line-height:1.5;color:var(--muted)}
+[data-theme=light] .card .n{color:color-mix(in srgb,var(--a) 62%,#000)}
+/* Footer */
+.foot{margin-top:72px;border-top:1px solid var(--border);background:var(--bg2);padding:44px 40px 32px}
+.cols{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;max-width:1200px;margin:0 auto}
+.cols h5{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:0 0 14px}
+.cols a{display:block;color:var(--text);font-size:14px;margin-bottom:8px}
+.copyr{max-width:1200px;margin:28px auto 0;font-size:13px;color:var(--faint)}
+.note{position:absolute;font:600 12px Geist;color:#0a0e16;background:#fde047;padding:4px 8px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+</style>
+</head>
+<body>
+<script>document.documentElement.dataset.theme=new URLSearchParams(location.search).get("theme")||"dark"</script>
+<nav class="nav">
+  <a class="brand" href="#"><img src="../../brand/favicon.svg" alt="">brand-kit</a>
+  <a class="l" href="#">Docs</a><a class="l" href="#">Outputs</a><a class="l" href="#">CLI</a><a class="l" href="#">Projects ▾</a>
+  <span class="sp"></span>
+  <a class="l" href="#">GitHub ↗</a><a class="l" href="#">npm ↗</a><span class="l">◐</span>
+  <span class="search">⌕&nbsp; Search</span>
+</nav>
+
+<header class="hero">
+  <div class="glow"></div>
+  <div style="position:relative">
+    <img class="mark" src="../../brand/favicon-512.png" alt="">
+    <h1 class="wm">brand-<span>kit</span></h1>
+    <p class="tag">Banner, social card and favicon for any repo.</p>
+    <p class="tag2">SVG sources you can regenerate, rendered to PNG.</p>
+    <figure class="preview" style="margin:0 auto">
+      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="mono">brand/banner.png · 1280×320</span></div>
+      <img src="../../brand/banner.png" alt="The brand-kit README banner, generated by brand-kit">
+      <span class="cap">this site's own banner — made with brand-kit</span>
+    </figure>
+    <div class="actions">
+      <div class="btns"><a class="btn p" href="#">Get started →</a><a class="btn s" href="#">CLI reference</a></div>
+      <div class="cmd mono"><span><span class="d">$</span>npx @rtorcato/brand-kit</span><span class="copy">⧉</span></div>
+      <div class="hint">No install needed. Run it in any repo, with or without a docs site.</div>
+    </div>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="head"><div><h2 class="h2">Everything a repo shows the world</h2><p class="sub">One command writes the default set. These are brand-kit's own.</p></div><a class="more" href="#">All outputs →</a></div>
+  <div class="gal">
+    <div class="tile t-social"><div class="img" style="padding:20px"><img src="../../brand/social-card.png" alt="brand-kit social card"></div>
+      <div class="meta"><span class="n">Social card<code>social-card.png</code></span><span class="s">1280×640 · og:image, GitHub preview</span></div></div>
+    <div class="tile"><div class="img"><img src="../../brand/banner-mobile.png" alt="brand-kit mobile banner" style="max-height:150px"></div>
+      <div class="meta"><span class="n">Mobile banner</span><span class="s">1280×786 · README under 640px</span></div></div>
+    <div class="tile"><div class="fav"><img src="../../brand/favicon-512.png" width="96" alt=""><img src="../../brand/favicon-512.png" width="48" alt=""><img src="../../brand/favicon-512.png" width="24" alt="" style="border-radius:6px"><img src="../../brand/favicon-512.png" width="16" alt="" style="border-radius:4px"></div>
+      <div class="meta"><span class="n">Favicon</span><span class="s">512 PNG · 16+32 ICO · SVG</span></div></div>
+  </div>
+  <div class="chips"><span class="lbl">Add <code>--social</code> for</span>
+    <span class="chip">avatar 400²</span><span class="chip">instagram 1080²</span><span class="chip">story 1080×1920</span><span class="chip">x-header 1500×500</span><span class="chip">linkedin 1584×396</span><span class="chip">youtube 2560×1440</span><span class="chip">facebook 1640×624</span></div>
+</section>
+
+<section class="sec">
+  <div class="head"><div><h2 class="h2">Use with AI</h2><p class="sub">A skill ships with brand-kit so your coding agent can brand a repo for you.</p></div><a href="#" style="font-weight:600;font-size:14px">Read the skill →</a></div>
+  <div class="ai"><b>Any coding agent</b><p>Pull the skill into any tool the skills CLI supports.</p><div class="row"><span>npx skills add https://github.com/rtorcato/brand-kit --skill brand-kit</span><span class="copy">⧉</span></div></div>
+  <div class="ai"><b>Claude Code</b><p>The repo is its own plugin marketplace. Add it, then install the skill.</p><div class="row"><span>/plugin marketplace add rtorcato/brand-kit</span><span class="copy">⧉</span></div><div class="row"><span>/plugin install brand-kit@brand-kit</span><span class="copy">⧉</span></div></div>
+</section>
+
+<section class="sec">
+  <div class="pills">
+    <div class="pill"><div class="pi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m9 8-5 4 5 4"/><path d="m15 8 5 4-5 4"/></svg></div><div class="pt">Sources, not binaries</div><div class="pd">SVG sources under <code>brand/</code>. Recolour or retitle with one flag instead of redrawing.</div></div>
+    <div class="pill"><div class="pi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></div><div class="pt">Every size a repo needs</div><div class="pd">README banner, mobile banner, social card and favicon, plus seven social sizes.</div></div>
+    <div class="pill"><div class="pi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.4 8 9 4.6-.6 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></div><div class="pt">Keeps itself honest</div><div class="pd"><code>doctor</code> flags missing sources and stale renders; <code>--strict</code> makes it a CI check.</div></div>
+    <div class="pill"><div class="pi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg></div><div class="pt">AI artwork, optional</div><div class="pd"><code>--ai</code> swaps the initial tile for a generated logo and background.</div></div>
+  </div>
+</section>
+
+<section class="sec">
+  <h2 class="h2">Sibling projects</h2><p class="sub">More from <code>@rtorcato</code> — same conventions, same release pipeline.</p>
+  <div class="sib">
+    <div class="card" style="--a:#f2cc60"><div class="h"><span class="n">@rtorcato/js-common</span><span class="d">Docs ↗</span></div><p>Tree-shakeable TypeScript utilities — tiny bundles, full type safety, CLI included.</p></div>
+    <div class="card" style="--a:#e879f9"><div class="h"><span class="n">@rtorcato/api-common</span><span class="d">Docs ↗</span></div><p>Framework-agnostic building blocks for Node.js APIs — errors, auth, rate limiting, OpenAPI.</p></div>
+    <div class="card" style="--a:#58a6ff"><div class="h"><span class="n">@rtorcato/browser-common</span><span class="d">Docs ↗</span></div><p>Tree-shakeable TypeScript wrappers around 40+ browser Web APIs — one subpath per spec.</p></div>
+    <div class="card" style="--a:#a78bfa"><div class="h"><span class="n">@rtorcato/db-common</span><span class="d">Docs ↗</span></div><p>Shared, tree-shakeable TypeScript database utilities for Node projects.</p></div>
+    <div class="card" style="--a:#fbad41"><div class="h"><span class="n">@rtorcato/cf-common</span><span class="d">Docs ↗</span></div><p>Typed TypeScript wrappers and helpers for Cloudflare bindings and APIs.</p></div>
+    <div class="card" style="--a:#818cf8"><div class="h"><span class="n">@rtorcato/react-common</span><span class="d">Docs ↗</span></div><p>Published React 19 component library — shared UI primitives.</p></div>
+  </div>
+  <p style="text-align:center;font-size:13px;color:var(--faint);margin-top:14px">… plus swift-common, supabase-common, repo-tooling and db-x</p>
+</section>
+
+<footer class="foot">
+  <div class="cols">
+    <div><h5>Documentation</h5><a>Getting started</a><a>Outputs</a><a>Configuration</a><a>CLI reference</a></div>
+    <div><h5>Resources</h5><a>GitHub</a><a>npm</a><a>Examples</a><a>Changelog</a></div>
+    <div><h5>Projects</h5><a>js-common</a><a>api-common</a><a>browser-common</a><a>…</a></div>
+    <div><h5>Community</h5><a>@rtorcato</a><a>Issues</a><a>License (MIT)</a></div>
+  </div>
+  <div class="copyr">Copyright © 2026 Richard Torcato. Built with Docusaurus.</div>
+</footer>
+</body>
+</html>

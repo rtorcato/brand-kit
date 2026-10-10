@@ -1,6 +1,11 @@
 {
   "$schema": "https://biomejs.dev/schemas/latest/schema.json",
-  "extends": [
-    "@rtorcato/repo-tooling/biome"
+  "extends": ["@rtorcato/repo-tooling/biome"],
+  "overrides": [
+    {
+      "includes": ["docs/design/**"],
+      "linter": { "enabled": false },
+      "formatter": { "enabled": false }
+    }
   ]
 }
