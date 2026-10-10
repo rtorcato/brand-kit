@@ -40,7 +40,7 @@
     "check:fix": "biome check --fix ."
   },
   "dependencies": {
-    "@rtorcato/shared-docs": "^1.14.0"
+    "@rtorcato/shared-docs": "^1.15.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.7",

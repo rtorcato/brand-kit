@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@rtorcato/shared-docs':
-        specifier: ^1.14.0
-        version: 1.14.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: ^1.15.0
+        version: 1.15.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.7
@@ -53,8 +53,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.1(@types/react@19.3.0)(react@19.3.0)
       '@rtorcato/shared-docs':
-        specifier: ^1.14.0
-        version: 1.14.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: ^1.15.0
+        version: 1.15.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -2006,8 +2006,8 @@ packages:
       vitest:
         optional: true
 
-  '@rtorcato/shared-docs@1.14.0':
-    resolution: {integrity: sha512-NRRPo1nyQgat3YeajNhz+Mqx9r48bcRFNnUcOADMGAT2rdu6lEMlZLVHnow4mGfyfr3blTYjV9TEhsA60zQE2g==}
+  '@rtorcato/shared-docs@1.15.0':
+    resolution: {integrity: sha512-7knjyHWyVa5XIe8f4zTrykVdoccBLC6nHC0EpPnm/iUPdiEs8e5YeJaj7YwSt53hEsJI8l8zeWrLkG0bVSaSEw==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -9652,7 +9652,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@rtorcato/shared-docs@1.14.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@rtorcato/shared-docs@1.15.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     optionalDependencies:
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
