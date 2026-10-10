@@ -15,7 +15,11 @@ allowBuilds:
   sharp: true
 
 # Docs-site transitive advisories (@docusaurus/core); range-scoped so newer
-# versions are left alone.
+# versions are left alone. tinypool 1 -> 2 is a major under @docusaurus/core
+# 3.10 (pins ^1.0.2); drop it once Docusaurus moves to tinypool 2.
 overrides:
   'serialize-javascript@<7.0.5': '>=7.0.5'
   'uuid@<11.1.1': '>=11.1.1'
+  'tinypool@<2.1.2': '>=2.1.2'
+  'http-cache-semantics@<4.2.1': '>=4.2.1'
+  'source-map-js@<1.2.2': '>=1.2.2'
