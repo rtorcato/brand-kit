@@ -7,6 +7,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { inflateSync } from 'node:zlib'
 import type { BrandMeta } from './brand.js'
 
 export type Aspect = '1:1' | '16:9'
@@ -281,23 +282,161 @@ export function prompts(meta: BrandMeta, style?: string): { logo: string; backgr
  * so a hostile API response can't reach the docs origin. A raster logo is
  * shrunk to a 256px PNG when rsvg-convert is around, since the raw render is
  * 1-2 MB. Its type is read from the bytes: Cloudflare's FLUX returns JPEG, and
- * JPEG labelled image/png renders blank.
+ * JPEG labelled image/png renders blank. With rsvg-convert, the tile is also
+ * zoomed to the mark's content (see fitBox), since generators leave it small.
  */
 function logoFavicon(meta: BrandMeta, logo: Buffer): string {
 	const mime = isSvg(logo) ? 'image/svg+xml' : rasterMime(logo)
+	const b64 = logo.toString('base64')
+	const image = (type: string, data: string, box = TILE): string =>
+		`<image href="data:${type};base64,${data}" ${box} preserveAspectRatio="xMidYMid slice"`
 	const svg = (
 		type: string,
-		b64: string
+		data: string,
+		box?: string
 	): string => `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
 	<title>${meta.name.replace(/[<&"]/g, '')}</title>
 	<clipPath id="tile"><rect width="32" height="32" rx="8"/></clipPath>
-	<image href="data:${type};base64,${b64}" width="32" height="32" clip-path="url(#tile)" preserveAspectRatio="xMidYMid slice"/>
+	${image(type, data, box)} clip-path="url(#tile)"/>
 </svg>
 `
-	const full = svg(mime, logo.toString('base64'))
-	if (mime === 'image/svg+xml' || spawnSync('rsvg-convert', ['--version']).error) return full
-	const small = execFileSync('rsvg-convert', ['-w', '256', '-h', '256'], { input: full })
+	// ponytail: without rsvg-convert there's no decoder for JPEG/SVG, so no trim.
+	if (spawnSync('rsvg-convert', ['--version']).error) return svg(mime, b64)
+	// Generators draw the mark small in a big empty square, so measure its
+	// content on an unclipped render and zoom the tile to it.
+	const probe = execFileSync('rsvg-convert', ['-w', '128', '-h', '128'], {
+		input: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">${image(mime, b64)}/></svg>`,
+	})
+	const box = fitBox(probe)
+	if (mime === 'image/svg+xml') return svg(mime, b64, box)
+	const small = execFileSync('rsvg-convert', ['-w', '256', '-h', '256'], {
+		input: svg(mime, b64, box),
+	})
 	return svg('image/png', small.toString('base64'))
+}
+
+const TILE = 'width="32" height="32"'
+
+/**
+ * Geometry for the logo <image> so the mark fills ~70% of the 32px tile.
+ * Background is what floods in from the edges in the top-left corner's colour.
+ * If what's left is itself a drawn tile (spans ~the whole image), the mark is
+ * what differs from that tile's commonest colour inside it. Never shrinks and
+ * never zooms past 3×, so a speck of noise can't become the favicon; the image
+ * always covers the tile, so a mark near an edge may sit off-centre.
+ */
+export function fitBox(png: Buffer): string {
+	const img = decodePng(png)
+	if (!img) return TILE
+	const { width: w, height: h, rgba } = img
+	const px = (i: number, c: number): number => rgba[i * 4 + c] ?? 0
+	// ponytail: fixed threshold above JPEG noise on flat colour; a strong gradient
+	// background reads as content, so it just isn't zoomed.
+	const near = (i: number, j: number): boolean =>
+		[0, 1, 2, 3].every((c) => Math.abs(px(i, c) - px(j, c)) <= 40)
+	/** Pixels reachable from the image's edges through pixels that pass `open`. */
+	const flood = (open: (i: number) => boolean): Uint8Array => {
+		const out = new Uint8Array(w * h)
+		const todo: number[] = []
+		for (let x = 0; x < w; x++) todo.push(x, (h - 1) * w + x)
+		for (let y = 0; y < h; y++) todo.push(y * w, y * w + w - 1)
+		while (todo.length) {
+			const i = todo.pop() ?? 0
+			if (out[i] || !open(i)) continue
+			out[i] = 1
+			const x = i % w
+			if (x > 0) todo.push(i - 1)
+			if (x < w - 1) todo.push(i + 1)
+			if (i >= w) todo.push(i - w)
+			if (i < w * (h - 1)) todo.push(i + w)
+		}
+		return out
+	}
+	const bbox = (keep: (i: number) => boolean): [number, number, number, number] => {
+		let [x0, y0, x1, y1] = [w, h, -1, -1]
+		for (let i = 0; i < w * h; i++) {
+			if (!keep(i)) continue
+			const [x, y] = [i % w, Math.floor(i / w)]
+			;[x0, y0, x1, y1] = [Math.min(x0, x), Math.min(y0, y), Math.max(x1, x), Math.max(y1, y)]
+		}
+		return [x0, y0, x1, y1]
+	}
+	const outer = flood((i) => near(i, 0))
+	let [x0, y0, x1, y1] = bbox((i) => !outer[i])
+	if (x1 - x0 + 1 >= 0.9 * w && y1 - y0 + 1 >= 0.9 * h) {
+		// A drawn tile. Colour bucket (4 bits a channel) → [count, first pixel];
+		// the commonest is the tile's colour.
+		const seen = new Map<number, [number, number]>()
+		let best = -1
+		for (let i = 0; i < w * h; i++) {
+			if (outer[i]) continue
+			const key = [0, 1, 2, 3].reduce((k, c) => (k << 4) | (px(i, c) >> 4), 0)
+			const hit = seen.get(key) ?? [0, i]
+			hit[0]++
+			seen.set(key, hit)
+			if (hit[0] > (seen.get(best)?.[0] ?? 0)) best = key
+		}
+		const tile = seen.get(best)?.[1] ?? 0
+		// Everything off the tile, its anti-aliased rim included, is background.
+		const off = flood((i) => !near(i, tile))
+		;[x0, y0, x1, y1] = bbox((i) => !off[i] && !near(i, tile))
+	}
+	if (x1 < 0) return TILE
+	const k = Math.min(3, Math.max(1, 0.7 / Math.max((x1 - x0 + 1) / w, (y1 - y0 + 1) / h)))
+	const size = 32 * k
+	const at = (lo: number, hi: number, n: number): number =>
+		Math.min(0, Math.max(32 - size, 16 - ((lo + hi + 1) / 2 / n) * size))
+	const r = (n: number): number => Math.round(n * 100) / 100
+	return `x="${r(at(x0, x1, w))}" y="${r(at(y0, y1, h))}" width="${r(size)}" height="${r(size)}"`
+}
+
+/**
+ * RGBA pixels of an 8-bit, non-interlaced RGB or RGBA PNG (what rsvg-convert
+ * writes); undefined for anything else.
+ */
+function decodePng(png: Buffer): { width: number; height: number; rgba: Uint8Array } | undefined {
+	if (png.subarray(1, 4).toString('latin1') !== 'PNG') return undefined
+	const width = png.readUInt32BE(16)
+	const height = png.readUInt32BE(20)
+	const [depth, type, , , interlace] = png.subarray(24, 29)
+	const bpp = type === 6 ? 4 : type === 2 ? 3 : 0
+	if (depth !== 8 || !bpp || interlace) return undefined
+	const idat: Buffer[] = []
+	for (let at = 8; at < png.length; ) {
+		const len = png.readUInt32BE(at)
+		if (png.subarray(at + 4, at + 8).toString('latin1') === 'IDAT')
+			idat.push(png.subarray(at + 8, at + 8 + len))
+		at += 12 + len
+	}
+	const raw = inflateSync(Buffer.concat(idat))
+	const stride = width * bpp
+	const px = new Uint8Array(stride * height)
+	for (let y = 0; y < height; y++) {
+		const filter = raw[y * (stride + 1)] ?? 0
+		for (let x = 0; x < stride; x++) {
+			const v = raw[y * (stride + 1) + 1 + x] ?? 0
+			const a = x >= bpp ? (px[y * stride + x - bpp] ?? 0) : 0
+			const b = y ? (px[(y - 1) * stride + x] ?? 0) : 0
+			const c = x >= bpp && y ? (px[(y - 1) * stride + x - bpp] ?? 0) : 0
+			const p = a + b - c
+			const pred = [
+				0,
+				a,
+				b,
+				(a + b) >> 1,
+				Math.abs(p - a) <= Math.abs(p - b) && Math.abs(p - a) <= Math.abs(p - c)
+					? a
+					: Math.abs(p - b) <= Math.abs(p - c)
+						? b
+						: c,
+			][filter]
+			px[y * stride + x] = (v + (pred ?? 0)) & 0xff
+		}
+	}
+	if (bpp === 4) return { width, height, rgba: px }
+	const rgba = new Uint8Array(width * height * 4).fill(255)
+	for (let i = 0; i < width * height; i++) rgba.set(px.subarray(i * 3, i * 3 + 3), i * 4)
+	return { width, height, rgba }
 }
 
 /** A raster image's media type from its magic bytes; PNG when unrecognised. */

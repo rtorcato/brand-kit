@@ -4,8 +4,9 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { deflateSync } from 'node:zlib'
 import { test } from 'node:test'
-import { generateAiArt, pickProvider } from '../dist/ai.js'
+import { fitBox, generateAiArt, pickProvider } from '../dist/ai.js'
 import { generateBrand, renderBrand, resolveBrandMeta } from '../dist/brand.js'
 
 const cli = new URL('../dist/cli.js', import.meta.url).pathname
@@ -280,4 +281,56 @@ test('a JPEG logo is embedded as JPEG, not mislabelled PNG, and never renders bl
 				'<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="#fff"/></svg>',
 		}).stdout
 	)
+})
+
+/** An n×n RGBA PNG (filter 0) where `paint(x, y)` gives each pixel's [r, g, b, a]. */
+function png(n, paint) {
+	const rows = []
+	for (let y = 0; y < n; y++) {
+		rows.push(0)
+		for (let x = 0; x < n; x++) rows.push(...paint(x, y))
+	}
+	const chunk = (type, data) => {
+		const len = Buffer.alloc(4)
+		len.writeUInt32BE(data.length)
+		return Buffer.concat([len, Buffer.from(type), data, Buffer.alloc(4)])
+	}
+	const ihdr = Buffer.alloc(13)
+	ihdr.writeUInt32BE(n, 0)
+	ihdr.writeUInt32BE(n, 4)
+	ihdr.set([8, 6, 0, 0, 0], 8)
+	return Buffer.concat([
+		Buffer.from('89504e470d0a1a0a', 'hex'),
+		chunk('IHDR', ihdr),
+		chunk('IDAT', deflateSync(Buffer.from(rows))),
+		chunk('IEND', Buffer.alloc(0)),
+	])
+}
+
+test('fitBox zooms a small centred mark to ~70% of the tile, and leaves a full one alone', () => {
+	const dark = [13, 17, 23, 255]
+	const lime = [132, 204, 22, 255]
+	const inside = (x, y, lo, hi) => x >= lo && x < hi && y >= lo && y < hi
+	// A 50% mark on a flat background: 1.4× zoom, still centred.
+	assert.equal(
+		fitBox(png(100, (x, y) => (inside(x, y, 25, 75) ? lime : dark))),
+		'x="-6.4" y="-6.4" width="44.8" height="44.8"'
+	)
+	// The same mark inside a dark rounded-ish tile drawn on white: the tile is ignored.
+	const white = [255, 255, 255, 255]
+	assert.equal(
+		fitBox(png(100, (x, y) => (inside(x, y, 25, 75) ? lime : inside(x, y, 3, 97) ? dark : white))),
+		'x="-6.4" y="-6.4" width="44.8" height="44.8"'
+	)
+	// A speck is capped at 3×; a mark that already fills the tile and a flat image aren't zoomed.
+	assert.equal(
+		fitBox(png(100, (x, y) => (inside(x, y, 49, 51) ? lime : dark))),
+		'x="-32" y="-32" width="96" height="96"'
+	)
+	assert.equal(
+		fitBox(png(100, (x, y) => (inside(x, y, 5, 95) ? lime : dark))),
+		'width="32" height="32"'
+	)
+	assert.equal(fitBox(png(4, () => dark)), 'width="32" height="32"')
+	assert.equal(fitBox(Buffer.from('not a png')), 'width="32" height="32"')
 })
