@@ -331,6 +331,16 @@ test('fitBox zooms a small centred mark to ~70% of the tile, and leaves a full o
 		fitBox(png(100, (x, y) => (inside(x, y, 5, 95) ? lime : dark))),
 		'width="32" height="32"'
 	)
+	// A ring on a gradient: no flat tile rims it, so it isn't zoomed onto its hole.
+	const ring = (x, y) => Math.hypot(x - 63.5, y - 63.5)
+	assert.equal(
+		fitBox(
+			png(128, (x, y) =>
+				ring(x, y) <= 40 && ring(x, y) >= 12 ? lime : [x + y, 40, 255 - x - y, 255]
+			)
+		),
+		'x="0" y="0" width="32" height="32"'
+	)
 	assert.equal(fitBox(png(4, () => dark)), 'width="32" height="32"')
 	assert.equal(fitBox(Buffer.from('not a png')), 'width="32" height="32"')
 })

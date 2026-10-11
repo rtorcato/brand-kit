@@ -320,8 +320,9 @@ const TILE = 'width="32" height="32"'
 /**
  * Geometry for the logo <image> so the mark fills ~70% of the 32px tile.
  * Background is what floods in from the edges in the top-left corner's colour.
- * If what's left is itself a drawn tile (spans ~the whole image), the mark is
- * what differs from that tile's commonest colour inside it. Never shrinks and
+ * If what's left is itself a drawn tile (spans ~the whole image and its
+ * commonest colour rims it), the mark is what differs from that colour inside
+ * it. Never shrinks and
  * never zooms past 3×, so a speck of noise can't become the favicon; the image
  * always covers the tile, so a mark near an edge may sit off-centre.
  */
@@ -377,9 +378,16 @@ export function fitBox(png: Buffer): string {
 			if (hit[0] > (seen.get(best)?.[0] ?? 0)) best = key
 		}
 		const tile = seen.get(best)?.[1] ?? 0
-		// Everything off the tile, its anti-aliased rim included, is background.
-		const off = flood((i) => !near(i, tile))
-		;[x0, y0, x1, y1] = bbox((i) => !off[i] && !near(i, tile))
+		// Only a tile if its colour rims the box (2px in, past the anti-aliasing);
+		// on a gradient the commonest colour is the mark's, and its hole isn't one.
+		const rim: number[] = []
+		for (let x = x0; x <= x1; x++) rim.push((y0 + 2) * w + x, (y1 - 2) * w + x)
+		for (let y = y0; y <= y1; y++) rim.push(y * w + x0 + 2, y * w + x1 - 2)
+		if (rim.filter((i) => near(i, tile)).length >= rim.length / 2) {
+			// Everything off the tile, its anti-aliased rim included, is background.
+			const off = flood((i) => !near(i, tile))
+			;[x0, y0, x1, y1] = bbox((i) => !off[i] && !near(i, tile))
+		}
 	}
 	if (x1 < 0) return TILE
 	const k = Math.min(3, Math.max(1, 0.7 / Math.max((x1 - x0 + 1) / w, (y1 - y0 + 1) / h)))
