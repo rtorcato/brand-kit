@@ -578,7 +578,9 @@ async function readManifest(brand: string): Promise<Record<string, string>> {
  * checkout writes files in arbitrary order, so mtimes lie on a fresh clone.
  * A PNG with no recorded hash counts as stale (renders once, then is recorded).
  */
-export async function staleRenders(brand: string): Promise<Array<[...(typeof RENDERS)[number], string]>> {
+export async function staleRenders(
+	brand: string
+): Promise<Array<[...(typeof RENDERS)[number], string]>> {
 	const manifest = await readManifest(brand)
 	const stale: Array<[...(typeof RENDERS)[number], string]> = []
 	for (const job of RENDERS) {
@@ -657,7 +659,7 @@ const LEGACY_MARKERS = [
 ] as const
 
 /** The README `<picture>` banner, mobile variant under 640px, as a delimited block. */
-export function buildBannerBlock(name: string, light = false): string {
+export function buildBannerBlock(name: string, light = false, tagline?: string): string {
 	// First matching <source> wins, so the more specific light+mobile one comes first.
 	const lightMobile = light
 		? `  <source media="(max-width: 640px) and (prefers-color-scheme: light)" srcset="./brand/banner-mobile-light.png">
@@ -667,10 +669,11 @@ export function buildBannerBlock(name: string, light = false): string {
 		? `  <source media="(prefers-color-scheme: light)" srcset="./brand/banner-light.png">
 `
 		: ''
+	const alt = tagline ? esc(tagline) : `${esc(name)} banner`
 	return `${BANNER_START}
 <picture>
 ${lightMobile}  <source media="(max-width: 640px)" srcset="./brand/banner-mobile.png">
-${lightDesktop}  <img src="./brand/banner.png" alt="${esc(name)} banner" width="1600">
+${lightDesktop}  <img src="./brand/banner.png" alt="${alt}" width="1600">
 </picture>
 ${BANNER_END}`
 }
@@ -705,12 +708,23 @@ export async function addReadmeBanner(targetDir: string, name: string): Promise<
 	if (!(await exists(file))) return null
 	if (!(await exists(path.join(targetDir, 'brand', 'banner.png')))) return null
 	const readme = await read(file)
+	let pkg: Pkg = null
+	try {
+		const pkgFile = path.join(targetDir, 'package.json')
+		if (await exists(pkgFile)) {
+			pkg = JSON.parse(await read(pkgFile))
+		}
+	} catch {
+		// Ignore errors reading package.json; fall back to name-only alt.
+	}
+	const meta = await resolveBrandMeta(pkg, targetDir)
 	const next = upsertBanner(
 		readme,
 		buildBannerBlock(
 			name,
 			(await exists(path.join(targetDir, 'brand', 'banner-light.png'))) &&
-				(await exists(path.join(targetDir, 'brand', 'banner-mobile-light.png')))
+				(await exists(path.join(targetDir, 'brand', 'banner-mobile-light.png'))),
+			meta.tagline
 		)
 	)
 	if (next === readme) return null
