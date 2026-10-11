@@ -12,9 +12,12 @@ a docs site can use it.
 
 ## Release
 
-semantic-release runs on every push to `main`, but the `release` environment
-has required reviewers, so each run waits for manual approval before it
-publishes. `feat:` is a minor release, `fix:` a patch, and `chore:`/`docs:`/`ci:` release nothing. `version`
+Releases are batched: merging to `main` no longer releases. `release.yml`
+runs semantic-release only when a milestone is closed or the workflow is
+dispatched by hand, and then publishes everything merged since the last tag.
+The `release` environment has required reviewers, so each run still waits for
+manual approval before it publishes. A newer request supersedes a run still
+waiting for approval, never one already publishing. `feat:` is a minor release, `fix:` a patch, and `chore:`/`docs:`/`ci:` release nothing. `version`
 in `package.json` is a placeholder; npm and the git tags are the record.
 
 ## Boundaries
