@@ -17,12 +17,29 @@ import {
 	wrapText,
 } from '../dist/brand.js'
 
-test('wrapText wraps greedily and ellipsises what overflows maxLines', () => {
+test('wrapText wraps to the fewest lines and ellipsises what overflows maxLines', () => {
 	assert.deepEqual(wrapText('one two three', 20, 3), ['one two three'])
 	assert.deepEqual(wrapText('aaa bbb ccc ddd', 7, 3), ['aaa bbb', 'ccc ddd'])
+	assert.deepEqual(wrapText('', 20, 3), [])
 	const cut = wrapText('aaa bbb ccc ddd eee', 7, 2)
 	assert.equal(cut.length, 2)
 	assert.equal(cut[1], 'ccc ddd…')
+})
+
+test('wrapText balances lines instead of orphaning the last word', () => {
+	const tagline = 'Banner, social card and favicon for any repo.'
+	// Mobile banner budget: greedy would leave "repo." alone on line 2.
+	assert.deepEqual(wrapText(tagline, 42, 3), ['Banner, social card and', 'favicon for any repo.'])
+	// Desktop banner budget: one line.
+	assert.deepEqual(wrapText(tagline, 60, 3), [tagline])
+	assert.deepEqual(wrapText('aa bb cc dd ee', 11, 3), ['aa bb cc', 'dd ee'])
+	// Balancing never exceeds the budget or adds a line.
+	for (const line of wrapText('one two three four five six seven', 14, 3)) {
+		assert.ok(line.length <= 14, line)
+	}
+	assert.equal(wrapText('one two three four five six seven', 14, 3).length, 3)
+	// A word longer than the budget still gets a line of its own.
+	assert.deepEqual(wrapText('a supercalifragilistic b', 10, 3), ['a', 'supercalifragilistic', 'b'])
 })
 
 test('upsertBanner refreshes in place, ignores a table row naming banner.png, else prepends', () => {

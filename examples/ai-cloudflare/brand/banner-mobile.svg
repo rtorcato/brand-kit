@@ -27,8 +27,8 @@
 	<text x="640" y="360" text-anchor="middle" font-family="'Avenir Next', Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="76" letter-spacing="-1.8"><tspan fill="#8b95a7">skyline</tspan></text>
 
 	<text text-anchor="middle" font-family="'Avenir Next', Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="500" font-size="30" fill="#9ba6b8">
-		<tspan x="640" y="510">Fast, typed utilities for building web</tspan>
-		<tspan x="640" y="554">apps</tspan>
+		<tspan x="640" y="510">Fast, typed utilities</tspan>
+		<tspan x="640" y="554">for building web apps</tspan>
 	</text>
 
 	<rect x="427" y="650" width="426" height="78" rx="14" fill="#11151d" stroke="#232936" stroke-width="1"/>
