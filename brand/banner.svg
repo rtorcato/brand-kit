@@ -27,8 +27,7 @@
 	<text x="156" y="150" font-family="'Avenir Next', Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="62" letter-spacing="-1.5"><tspan fill="#e6edf3">brand-</tspan><tspan fill="#a3e635">kit</tspan></text>
 
 	<text font-family="'Avenir Next', Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="500" font-size="20" fill="#9ba6b8">
-		<tspan x="62" y="198">Banner, social card and favicon for any</tspan>
-		<tspan x="62" y="226">repo.</tspan>
+		<tspan x="62" y="198">Banner, social card and favicon for any repo.</tspan>
 	</text>
 
 	<rect x="845" y="118" width="378" height="84" rx="14" fill="#11151d" stroke="#232936" stroke-width="1"/>
