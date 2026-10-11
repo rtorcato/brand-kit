@@ -85,7 +85,7 @@ Geist for everything and Geist Mono for code, filenames, sizes and chips, as shi
 
 These go in rtorcato/shared-docs, so every family site gets them:
 
-- **`<Siblings>` restyle:** draw the cards with `--jt-surface`, `--jt-border` and a 3px left border in each project's family accent, matching browser-common's sibling cards. In light mode, darken the title tint (`color-mix(in srgb, <accent> 62%, #000)`) so it passes AA. Today the cards use Infima's grey `--ifm-card-background-color` with no stripe.
+- **`<Siblings>` restyle:** draw the cards with `--jt-surface`, `--jt-border` and a 3px left border in each project's family accent, matching browser-common's sibling cards. In light mode, darken the title tint (`color-mix(in srgb, <accent> 55%, #000)`) so it passes AA. The title is 16px bold, which isn't large text, so it needs 4.5:1. At 55% the lowest family accent (`#a3e635`) reaches 4.71:1 on white; 62% left `#a3e635`, `#f2cc60` and `#22d3ee` at 3.8–4.5:1. The stripe stays the raw accent. Today the cards use Infima's grey `--ifm-card-background-color` with no stripe.
 - **Version:** brand-kit pins `^1.13.1`. Bump it to `^1.15.0`, which fixes brand-kit's sibling card label and drops repo-ai from the family list.
 
 ## Rules
