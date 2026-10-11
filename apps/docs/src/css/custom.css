@@ -4,8 +4,8 @@
 @import "./theme.css";
 
 :root {
-	--ifm-color-primary: #a3e635;
-	--jt-accent: #a3e635;
+	--ifm-color-primary: #4d7c0f;
+	--jt-accent: #4d7c0f;
 }
 
 [data-theme="dark"] {
