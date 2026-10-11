@@ -54,3 +54,8 @@
 	color: var(--jt-faint);
 	font-weight: 400;
 }
+
+/* Light mode active sidebar link: lime-800 for WCAG AA contrast on light accent-soft background */
+[data-theme="light"] .menu__link--active:not(.menu__link--sublist) {
+	color: #3f6212;
+}
