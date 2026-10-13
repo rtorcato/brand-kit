@@ -62,27 +62,74 @@ function esc(s: string): string {
 }
 
 /**
- * Greedy word wrap to a character budget. Character-budgeted rather than
+ * Balanced word wrap to a character budget. Character-budgeted rather than
  * measured because there is no text metric available here — the templates are
  * meant to be nudged by hand once rendered.
+ *
+ * A greedy pass decides how many lines the text needs. When that fits in
+ * `maxLines`, the words are re-split across the same number of lines as evenly
+ * as possible, so the last line is never a lone word when a better split
+ * exists. When it doesn't fit, the greedy lines are kept and the last one is
+ * ellipsised.
  */
 export function wrapText(text: string, maxChars: number, maxLines: number): string[] {
-	const lines: string[] = []
+	const words = text.split(/\s+/).filter(Boolean)
+	const greedy: string[] = []
 	let line = ''
-	for (const word of text.split(/\s+/).filter(Boolean)) {
+	for (const word of words) {
 		const next = line ? `${line} ${word}` : word
 		if (next.length > maxChars && line) {
-			lines.push(line)
+			greedy.push(line)
 			line = word
-			if (lines.length === maxLines) break
 		} else {
 			line = next
 		}
 	}
-	if (lines.length < maxLines && line) lines.push(line)
-	// Anything that didn't fit is dropped rather than overflowing the canvas.
-	if (lines.length === maxLines && text.length > lines.join(' ').length) {
+	if (line) greedy.push(line)
+	if (greedy.length > maxLines) {
+		// Anything that didn't fit is dropped rather than overflowing the canvas.
+		const lines = greedy.slice(0, maxLines)
 		lines[maxLines - 1] = `${lines[maxLines - 1]}…`
+		return lines
+	}
+	return balance(words, greedy.length, maxChars)
+}
+
+/**
+ * Splits `words` into exactly `count` lines, minimising the sum of squared line
+ * lengths (the most even split) while keeping each line within `maxChars`. A
+ * single word longer than `maxChars` may sit on a line alone, as in the greedy
+ * pass. ponytail: O(count × words²), fine for a tagline.
+ */
+function balance(words: string[], count: number, maxChars: number): string[] {
+	const n = words.length
+	const len = (i: number, j: number) =>
+		words.slice(i, j).reduce((sum, w) => sum + w.length, 0) + (j - i - 1)
+	// cost[k * (n + 1) + j]: best cost of putting the first j words on k lines;
+	// from[...] is where line k starts.
+	const at = (k: number, j: number) => k * (n + 1) + j
+	const cost = Array<number>((count + 1) * (n + 1)).fill(Infinity)
+	const from = Array<number>((count + 1) * (n + 1)).fill(0)
+	cost[0] = 0
+	for (let k = 1; k <= count; k++) {
+		for (let j = k; j <= n; j++) {
+			for (let i = k - 1; i < j; i++) {
+				const l = len(i, j)
+				if (l > maxChars && j - i > 1) continue
+				const c = (cost[at(k - 1, i)] ?? Infinity) + l * l
+				// `<=`: on a tie, the later break wins, so the last line is the shorter one.
+				if (c <= (cost[at(k, j)] ?? Infinity)) {
+					cost[at(k, j)] = c
+					from[at(k, j)] = i
+				}
+			}
+		}
+	}
+	const lines: string[] = []
+	for (let k = count, j = n; k > 0; k--) {
+		const i = from[at(k, j)] ?? 0
+		lines.unshift(words.slice(i, j).join(' '))
+		j = i
 	}
 	return lines
 }
@@ -275,7 +322,7 @@ ${mark(60, 88, 72)}
 
 	<text x="156" y="150" font-family="${SANS}" font-weight="800" font-size="62" letter-spacing="-1.5">${wordmark(meta)}</text>
 
-${taglineBlock(meta, { x: 62, y: 198, step: 28, size: 20, centred: false, maxChars: 44 })}
+${taglineBlock(meta, { x: 62, y: 198, step: 28, size: 20, centred: false, maxChars: 60 })}
 ${installPanel(meta, { x: 845, y: 118, w: 378, h: 84, size: 20 })}
 </svg>
 `

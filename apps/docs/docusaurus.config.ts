@@ -3,6 +3,8 @@ import type { Config } from '@docusaurus/types'
 import { GITHUB_PROFILE, copyright, projectFamilyItems } from '@rtorcato/shared-docs'
 import { themes as prismThemes } from 'prism-react-renderer'
 
+const NPM = 'https://www.npmjs.com/package/@rtorcato/brand-kit'
+
 const config: Config = {
 	title: 'brand-kit',
 	tagline:
@@ -68,9 +70,12 @@ const config: Config = {
 		},
 		navbar: {
 			title: 'brand-kit',
-
+			// Synced from brand/favicon.svg by `brand-kit render`.
+			logo: { alt: '', src: 'img/favicon.svg', width: 26, height: 26 },
 			items: [
 				{ to: '/docs', position: 'left', label: 'Docs' },
+				{ to: '/docs/outputs', position: 'left', label: 'Outputs' },
+				{ to: '/docs/cli', position: 'left', label: 'CLI' },
 				{
 					type: 'dropdown',
 					label: 'Projects',
@@ -78,20 +83,42 @@ const config: Config = {
 					items: [...projectFamilyItems(), { label: 'All on GitHub →', href: GITHUB_PROFILE }],
 				},
 				{ href: 'https://github.com/rtorcato/brand-kit', label: 'GitHub', position: 'right' },
+				{ href: NPM, label: 'npm', position: 'right' },
 			],
 		},
 		footer: {
 			style: 'dark',
 			links: [
-				{ title: 'Docs', items: [{ label: 'Getting Started', to: '/docs' }] },
 				{
-					title: 'More',
+					title: 'Documentation',
+					items: [
+						{ label: 'Getting started', to: '/docs' },
+						{ label: 'Outputs', to: '/docs/outputs' },
+						{ label: 'Configuration', to: '/docs/configuration' },
+						{ label: 'CLI reference', to: '/docs/cli' },
+					],
+				},
+				{
+					title: 'Resources',
 					items: [
 						{ label: 'GitHub', href: 'https://github.com/rtorcato/brand-kit' },
-						{ label: 'Issues', href: 'https://github.com/rtorcato/brand-kit/issues' },
+						{ label: 'npm', href: NPM },
+						{ label: 'Examples', to: '/docs/examples' },
+						{ label: 'Changelog', to: '/docs/changelog' },
 					],
 				},
 				{ title: 'Projects', items: projectFamilyItems() },
+				{
+					title: 'Community',
+					items: [
+						{ label: '@rtorcato', href: GITHUB_PROFILE },
+						{ label: 'Issues', href: 'https://github.com/rtorcato/brand-kit/issues' },
+						{
+							label: 'License (MIT)',
+							href: 'https://github.com/rtorcato/brand-kit/blob/main/LICENSE',
+						},
+					],
+				},
 			],
 			copyright: copyright(),
 		},
