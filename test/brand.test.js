@@ -11,11 +11,19 @@ import {
 	buildBannerBlock,
 	faviconSvg,
 	packIco,
+	DOCS_ASSETS,
+	RENDER_SH,
 	RENDERS,
 	renderBrand,
 	upsertBanner,
 	wrapText,
 } from '../dist/brand.js'
+
+test('the docs site copies favicon.svg and the card, never the raster favicon.ico', () => {
+	assert.deepEqual(DOCS_ASSETS, ['favicon.svg', 'social-card.png'])
+	assert.match(RENDER_SH, /for f in favicon\.svg social-card\.png; do/)
+	assert.doesNotMatch(RENDER_SH, /favicon\.ico social-card/)
+})
 
 test('wrapText wraps to the fewest lines and ellipsises what overflows maxLines', () => {
 	assert.deepEqual(wrapText('one two three', 20, 3), ['one two three'])
