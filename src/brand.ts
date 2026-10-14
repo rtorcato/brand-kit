@@ -625,7 +625,9 @@ async function readManifest(brand: string): Promise<Record<string, string>> {
  * checkout writes files in arbitrary order, so mtimes lie on a fresh clone.
  * A PNG with no recorded hash counts as stale (renders once, then is recorded).
  */
-export async function staleRenders(brand: string): Promise<Array<[...(typeof RENDERS)[number], string]>> {
+export async function staleRenders(
+	brand: string
+): Promise<Array<[...(typeof RENDERS)[number], string]>> {
 	const manifest = await readManifest(brand)
 	const stale: Array<[...(typeof RENDERS)[number], string]> = []
 	for (const job of RENDERS) {
