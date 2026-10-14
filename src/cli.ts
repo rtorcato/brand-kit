@@ -211,11 +211,7 @@ async function main(): Promise<number> {
 	const finish = async (): Promise<string[]> => {
 		const rendered = (await renderBrand(dir)) ?? []
 		const banner = await addReadmeBanner(dir, name)
-		return [
-			...rendered,
-			...(banner ? [banner] : []),
-			...(await syncBrandToDocs(dir)),
-		]
+		return [...rendered, ...(banner ? [banner] : []), ...(await syncBrandToDocs(dir))]
 	}
 
 	if (command === 'init') {
