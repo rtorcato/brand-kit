@@ -70,8 +70,13 @@ const config: Config = {
 		},
 		navbar: {
 			title: 'brand-kit',
-			// Synced from brand/favicon.svg by `brand-kit render`.
-			logo: { alt: '', src: 'img/favicon.svg', width: 26, height: 26 },
+			logo: {
+				alt: 'brand-kit',
+				src: 'img/logo.svg',
+				srcDark: 'img/logo-dark.svg',
+				width: 26,
+				height: 26,
+			},
 			items: [
 				{ to: '/docs', position: 'left', label: 'Docs' },
 				{ to: '/docs/outputs', position: 'left', label: 'Outputs' },
