@@ -23,13 +23,19 @@
 	position: relative;
 }
 
+/* Family mark above the wordmark. The wrapper centres it: Docusaurus sets
+   display: initial on the themed img, which would beat a display: block here. */
+.markWrap {
+	display: flex;
+	justify-content: center;
+	margin-bottom: 22px;
+}
 .mark {
-	display: block;
-	width: 64px;
-	height: 64px;
-	margin: 0 auto 18px;
-	border-radius: 16px;
-	box-shadow: var(--jt-shadow);
+	width: 72px;
+	height: 72px;
+}
+[data-theme="dark"] .mark {
+	filter: drop-shadow(0 0 28px rgba(163, 230, 53, 0.45));
 }
 
 .wordmark {

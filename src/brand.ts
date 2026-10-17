@@ -450,7 +450,7 @@ fi
 img=apps/docs/static/img
 if [ -d apps/docs ]; then
 	mkdir -p "$img"
-	for f in favicon.svg favicon.ico social-card.png; do
+	for f in favicon.svg social-card.png; do
 		if [ -f "brand/$f" ] && [ ! -e "$img/$f" ]; then
 			cp "brand/$f" "$img/$f"
 			echo "copied: $img/$f"
@@ -625,7 +625,9 @@ async function readManifest(brand: string): Promise<Record<string, string>> {
  * checkout writes files in arbitrary order, so mtimes lie on a fresh clone.
  * A PNG with no recorded hash counts as stale (renders once, then is recorded).
  */
-export async function staleRenders(brand: string): Promise<Array<[...(typeof RENDERS)[number], string]>> {
+export async function staleRenders(
+	brand: string
+): Promise<Array<[...(typeof RENDERS)[number], string]>> {
 	const manifest = await readManifest(brand)
 	const stale: Array<[...(typeof RENDERS)[number], string]> = []
 	for (const job of RENDERS) {
@@ -671,8 +673,11 @@ export async function renderBrand(targetDir: string): Promise<string[] | null> {
 	return written
 }
 
-/** brand/ file → docs-site static/img file. The ico and card PNG exist only once rendered. */
-export const DOCS_ASSETS = ['favicon.svg', 'favicon.ico', 'social-card.png']
+/**
+ * brand/ file → docs-site static/img file. The card PNG exists only once rendered.
+ * favicon.ico stays in brand/: browsers only request the SVG, so the site doesn't copy it.
+ */
+export const DOCS_ASSETS = ['favicon.svg', 'social-card.png']
 
 /**
  * Copy the brand favicon and social card into the docs site's `static/img`

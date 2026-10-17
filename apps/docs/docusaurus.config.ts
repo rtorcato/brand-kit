@@ -9,7 +9,7 @@ const config: Config = {
 	title: 'brand-kit',
 	tagline:
 		'Banner, social card and favicon for a repo — SVG sources you can regenerate, rendered to PNG.',
-	favicon: 'img/favicon.ico',
+	favicon: 'img/favicon.svg',
 
 	url: 'https://docs.torcato.dev',
 	baseUrl: '/brand-kit/',
@@ -70,8 +70,13 @@ const config: Config = {
 		},
 		navbar: {
 			title: 'brand-kit',
-			// Synced from brand/favicon.svg by `brand-kit render`.
-			logo: { alt: '', src: 'img/favicon.svg', width: 26, height: 26 },
+			logo: {
+				alt: 'brand-kit',
+				src: 'img/logo.svg',
+				srcDark: 'img/logo-dark.svg',
+				width: 26,
+				height: 26,
+			},
 			items: [
 				{ to: '/docs', position: 'left', label: 'Docs' },
 				{ to: '/docs/outputs', position: 'left', label: 'Outputs' },

@@ -183,13 +183,12 @@ test('cloudflare is checked last, decodes base64 JSON and raw bytes, and explain
 	)
 	// Test 403 with permission error (code 10000): includes Workers AI hint.
 	globalThis.fetch = async () =>
-		Response.json(
-			{ errors: [{ code: 10000, message: 'Authentication error' }] },
-			{ status: 403 }
-		)
+		Response.json({ errors: [{ code: 10000, message: 'Authentication error' }] }, { status: 403 })
 	await assert.rejects(
 		pickProvider('cloudflare', undefined, cf)('p', '1:1'),
-		(e) => /403 \(10000 Authentication error\).*Workers AI permission/.test(e.message) && !/secret-token/.test(e.message)
+		(e) =>
+			/403 \(10000 Authentication error\).*Workers AI permission/.test(e.message) &&
+			!/secret-token/.test(e.message)
 	)
 })
 
