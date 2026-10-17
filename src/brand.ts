@@ -204,6 +204,9 @@ export interface BrandOptions {
 export const familyEntry = (pkgName: string | undefined): FamilyMember | undefined =>
 	FAMILY.find((m) => m.name === pkgName)
 
+/** Drawn on the banner when nothing names a tagline, so it must never become the README alt text. */
+const TAGLINE_PLACEHOLDER = 'Add a short tagline with --tagline.'
+
 export async function resolveBrandMeta(
 	pkg: Pkg,
 	targetDir: string,
@@ -221,8 +224,7 @@ export async function resolveBrandMeta(
 		NEUTRAL_ACCENT
 	return {
 		name,
-		tagline:
-			opts.tagline || member?.tagline || description || 'Add a short tagline with --tagline.',
+		tagline: opts.tagline || member?.tagline || description || TAGLINE_PLACEHOLDER,
 		accent,
 		install: pkgName && pkg?.private !== true ? pkgName : null,
 		background: await exists(path.join(targetDir, 'brand', 'background.png')),
@@ -709,7 +711,7 @@ const LEGACY_MARKERS = [
 ] as const
 
 /** The README `<picture>` banner, mobile variant under 640px, as a delimited block. */
-export function buildBannerBlock(name: string, light = false): string {
+export function buildBannerBlock(name: string, light = false, tagline?: string): string {
 	// First matching <source> wins, so the more specific light+mobile one comes first.
 	const lightMobile = light
 		? `  <source media="(max-width: 640px) and (prefers-color-scheme: light)" srcset="./brand/banner-mobile-light.png">
@@ -719,10 +721,11 @@ export function buildBannerBlock(name: string, light = false): string {
 		? `  <source media="(prefers-color-scheme: light)" srcset="./brand/banner-light.png">
 `
 		: ''
+	const alt = tagline ? esc(tagline) : `${esc(name)} banner`
 	return `${BANNER_START}
 <picture>
 ${lightMobile}  <source media="(max-width: 640px)" srcset="./brand/banner-mobile.png">
-${lightDesktop}  <img src="./brand/banner.png" alt="${esc(name)} banner" width="1600">
+${lightDesktop}  <img src="./brand/banner.png" alt="${alt}" width="1600">
 </picture>
 ${BANNER_END}`
 }
@@ -752,17 +755,32 @@ export function upsertBanner(readme: string, block: string): string {
 }
 
 /** Add the banner block to README.md once `brand/banner.png` exists to show. */
-export async function addReadmeBanner(targetDir: string, name: string): Promise<string | null> {
+export async function addReadmeBanner(
+	targetDir: string,
+	name: string,
+	opts: BrandOptions = {}
+): Promise<string | null> {
 	const file = path.join(targetDir, 'README.md')
 	if (!(await exists(file))) return null
 	if (!(await exists(path.join(targetDir, 'brand', 'banner.png')))) return null
 	const readme = await read(file)
+	let pkg: Pkg = null
+	try {
+		const pkgFile = path.join(targetDir, 'package.json')
+		if (await exists(pkgFile)) {
+			pkg = JSON.parse(await read(pkgFile))
+		}
+	} catch {
+		// Ignore errors reading package.json; fall back to name-only alt.
+	}
+	const meta = await resolveBrandMeta(pkg, targetDir, opts)
 	const next = upsertBanner(
 		readme,
 		buildBannerBlock(
 			name,
 			(await exists(path.join(targetDir, 'brand', 'banner-light.png'))) &&
-				(await exists(path.join(targetDir, 'brand', 'banner-mobile-light.png')))
+				(await exists(path.join(targetDir, 'brand', 'banner-mobile-light.png'))),
+			meta.tagline === TAGLINE_PLACEHOLDER ? undefined : meta.tagline
 		)
 	)
 	if (next === readme) return null

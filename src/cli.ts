@@ -197,6 +197,12 @@ async function main(): Promise<number> {
 		: null
 	const name =
 		typeof pkg?.name === 'string' ? (pkg.name.split('/').pop() ?? pkg.name) : path.basename(dir)
+	const opts = {
+		tagline: values.tagline,
+		accent: values.accent,
+		social: values.social,
+		light: values.light,
+	}
 	const report = (data: Record<string, unknown>, text: string): void => {
 		console.log(values.json ? JSON.stringify({ command, ...data }) : text)
 	}
@@ -210,17 +216,11 @@ async function main(): Promise<number> {
 	// Render, then the README banner (it needs banner.png), then the docs-site copies.
 	const finish = async (): Promise<string[]> => {
 		const rendered = (await renderBrand(dir)) ?? []
-		const banner = await addReadmeBanner(dir, name)
+		const banner = await addReadmeBanner(dir, name, opts)
 		return [...rendered, ...(banner ? [banner] : []), ...(await syncBrandToDocs(dir))]
 	}
 
 	if (command === 'init') {
-		const opts = {
-			tagline: values.tagline,
-			accent: values.accent,
-			social: values.social,
-			light: values.light,
-		}
 		const art: string[] = []
 		if (values.ai) {
 			// Shell env wins over .env: loadEnvFile never overwrites a variable already set.
