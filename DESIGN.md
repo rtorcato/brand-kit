@@ -4,8 +4,8 @@ The design spec for the brand-kit docs site (`apps/docs`). Read it before changi
 
 - **Status:** v1, approved by rtorcato on 2026-10-10. UI PRs can build against it.
 - **Designer:** Zoey (2026-10-10)
-- **Mockups:** [`docs/design/`](docs/design/)
-- **Clickable reference:** open `docs/design/mockup.html?theme=dark|light` locally in a browser. It loads the real assets from `brand/`. It's reference only, so don't ship it.
+- **Mockups:** on R2 at [`media.torcato.dev/brand-kit/`](https://media.torcato.dev/brand-kit/), not in git.
+- **Clickable reference:** [`mockup-v2.html?theme=dark|light`](https://media.torcato.dev/brand-kit/mockup-v2.html). It loads the copies of the assets already on R2. It's reference only, so don't ship it.
 
 ## Principle
 
@@ -17,7 +17,7 @@ The site is a family docs site. It uses the same Docusaurus v3 structure, shared
 
 | View | Dark | Light |
 |---|---|---|
-| Landing | ![Landing, dark](docs/design/landing-dark.png) | ![Landing, light](docs/design/landing-light.png) |
+| Landing | ![Landing, dark](https://media.torcato.dev/brand-kit/landing-dark.png) | ![Landing, light](https://media.torcato.dev/brand-kit/landing-light.png) |
 
 ## Landing page (`src/pages/index.tsx`)
 

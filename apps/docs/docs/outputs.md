@@ -62,7 +62,8 @@ The markers let later runs replace the block in place. Leave them in.
 
 ## Docusaurus sites
 
-In a repo with a Docusaurus site at `apps/docs`, `favicon.svg`, `favicon.ico`
-and `social-card.png` are also copied to `apps/docs/static/img/`. Existing
+In a repo with a Docusaurus site at `apps/docs`, `favicon.svg` and
+`social-card.png` are also copied to `apps/docs/static/img/`. `favicon.ico` stays
+in `brand/`. Existing
 copies are kept, except after `--ai` generates new art. Delete a copy to
 refresh it.

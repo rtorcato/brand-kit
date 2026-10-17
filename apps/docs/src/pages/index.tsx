@@ -1,7 +1,9 @@
 import Link from '@docusaurus/Link'
+import useBaseUrl from '@docusaurus/useBaseUrl'
 import CommandBlock from '@rtorcato/shared-docs/components/CommandBlock'
 import Siblings from '@rtorcato/shared-docs/components/Siblings'
 import Layout from '@theme/Layout'
+import ThemedImage from '@theme/ThemedImage'
 import type { ReactElement, ReactNode } from 'react'
 // Imported straight from brand/, so the page always shows the current brand.
 import banner from '../../../../brand/banner.png'
@@ -107,6 +109,7 @@ const AI = [
 ]
 
 export default function Home(): ReactElement {
+	const mark = { light: useBaseUrl('/img/logo.svg'), dark: useBaseUrl('/img/logo-dark.svg') }
 	return (
 		<Layout
 			title="brand-kit"
@@ -115,7 +118,9 @@ export default function Home(): ReactElement {
 			<header className={styles.hero}>
 				<div className={styles.glow} aria-hidden="true" />
 				<div className={styles.heroInner}>
-					<img className={styles.mark} src={favicon512} width={64} height={64} alt="" />
+					<div className={styles.markWrap}>
+						<ThemedImage className={styles.mark} alt="" sources={mark} />
+					</div>
 					<h1 className={styles.wordmark}>
 						brand-<span>kit</span>
 					</h1>
