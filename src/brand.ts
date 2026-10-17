@@ -204,6 +204,9 @@ export interface BrandOptions {
 export const familyEntry = (pkgName: string | undefined): FamilyMember | undefined =>
 	FAMILY.find((m) => m.name === pkgName)
 
+/** Drawn on the banner when nothing names a tagline, so it must never become the README alt text. */
+const TAGLINE_PLACEHOLDER = 'Add a short tagline with --tagline.'
+
 export async function resolveBrandMeta(
 	pkg: Pkg,
 	targetDir: string,
@@ -221,8 +224,7 @@ export async function resolveBrandMeta(
 		NEUTRAL_ACCENT
 	return {
 		name,
-		tagline:
-			opts.tagline || member?.tagline || description || 'Add a short tagline with --tagline.',
+		tagline: opts.tagline || member?.tagline || description || TAGLINE_PLACEHOLDER,
 		accent,
 		install: pkgName && pkg?.private !== true ? pkgName : null,
 		background: await exists(path.join(targetDir, 'brand', 'background.png')),
@@ -753,7 +755,11 @@ export function upsertBanner(readme: string, block: string): string {
 }
 
 /** Add the banner block to README.md once `brand/banner.png` exists to show. */
-export async function addReadmeBanner(targetDir: string, name: string): Promise<string | null> {
+export async function addReadmeBanner(
+	targetDir: string,
+	name: string,
+	opts: BrandOptions = {}
+): Promise<string | null> {
 	const file = path.join(targetDir, 'README.md')
 	if (!(await exists(file))) return null
 	if (!(await exists(path.join(targetDir, 'brand', 'banner.png')))) return null
@@ -767,14 +773,14 @@ export async function addReadmeBanner(targetDir: string, name: string): Promise<
 	} catch {
 		// Ignore errors reading package.json; fall back to name-only alt.
 	}
-	const meta = await resolveBrandMeta(pkg, targetDir)
+	const meta = await resolveBrandMeta(pkg, targetDir, opts)
 	const next = upsertBanner(
 		readme,
 		buildBannerBlock(
 			name,
 			(await exists(path.join(targetDir, 'brand', 'banner-light.png'))) &&
 				(await exists(path.join(targetDir, 'brand', 'banner-mobile-light.png'))),
-			meta.tagline
+			meta.tagline === TAGLINE_PLACEHOLDER ? undefined : meta.tagline
 		)
 	)
 	if (next === readme) return null

@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import {
+	addReadmeBanner,
 	BANNER_END,
 	BANNER_START,
 	buildBannerBlock,
@@ -57,6 +58,20 @@ test('upsertBanner refreshes in place, ignores a table row naming banner.png, el
 	const table = '| `brand/banner.png` | 1280x320 |\n# T'
 	assert.equal(upsertBanner(table, block), `${block}\n\n${table}`)
 	assert.equal(upsertBanner('# T', block), `${block}\n\n# T`)
+})
+
+test('the README banner alt is the tagline, else "<name> banner", never the placeholder', async () => {
+	const readmeFor = async (opts) => {
+		const dir = mkdtempSync(join(tmpdir(), 'banner-alt-'))
+		mkdirSync(join(dir, 'brand'))
+		writeFileSync(join(dir, 'brand', 'banner.png'), '')
+		writeFileSync(join(dir, 'README.md'), '# demo\n')
+		writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'demo' }))
+		await addReadmeBanner(dir, 'demo', opts)
+		return readFileSync(join(dir, 'README.md'), 'utf8')
+	}
+	assert.match(await readmeFor({ tagline: 'Ship & see' }), /alt="Ship &amp; see"/)
+	assert.match(await readmeFor({}), /alt="demo banner"/)
 })
 
 test('packIco writes an ICONDIR with one entry per frame', () => {
