@@ -1,6 +1,6 @@
 import type * as Preset from '@docusaurus/preset-classic'
 import type { Config } from '@docusaurus/types'
-import { GITHUB_PROFILE, copyright, projectFamilyItems } from '@rtorcato/shared-docs'
+import { GITHUB_PROFILE, footerCopyright, projectFamilyItems } from '@rtorcato/shared-docs'
 import { themes as prismThemes } from 'prism-react-renderer'
 
 const NPM = 'https://www.npmjs.com/package/@rtorcato/brand-kit'
@@ -49,6 +49,7 @@ const config: Config = {
 	],
 
 	plugins: [
+		'@rtorcato/shared-docs/docusaurus',
 		[
 			'@easyops-cn/docusaurus-search-local',
 			{
@@ -125,7 +126,7 @@ const config: Config = {
 					],
 				},
 			],
-			copyright: copyright(),
+			copyright: footerCopyright(),
 		},
 		// `theme` is the LIGHT-mode Prism theme and `darkTheme` the dark one; the
 		// shared stylesheet assumes this pairing.
