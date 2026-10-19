@@ -287,13 +287,39 @@ function installPanel(
 	<text xml:space="preserve" x="${opts.x + opts.w / 2}" y="${opts.y + opts.h / 2 + opts.size / 3}" text-anchor="middle" font-family="${MONO}" font-size="${opts.size}"><tspan fill="${meta.accent}">npm i </tspan><tspan fill="${meta.light ? LIGHT.text : TEXT}">${esc(meta.install)}</tspan></text>`
 }
 
-function canvas(meta: BrandMeta, w: number, h: number, glow: { cx: number; cy: number }): string {
+/**
+ * The wash over `brand/background.png`: dark where the text sits, lighter where
+ * the art shows. The banner runs left to right; centred canvases run centre out.
+ */
+function washGradient(meta: BrandMeta, layout: 'banner' | 'centred'): string {
+	const color = meta.light ? LIGHT.bg[0] : '#0d1117'
+	if (layout === 'banner')
+		return `<linearGradient id="wash" x1="0" y1="0" x2="1" y2="0">
+			<stop offset="0" stop-color="${color}" stop-opacity="0.85"/>
+			<stop offset="0.42" stop-color="${color}" stop-opacity="0.85"/>
+			<stop offset="0.55" stop-color="${color}" stop-opacity="0.45"/>
+			<stop offset="1" stop-color="${color}" stop-opacity="0.2"/>
+		</linearGradient>`
+	return `<radialGradient id="wash" cx="0.5" cy="0.5" r="0.5">
+			<stop offset="0" stop-color="${color}" stop-opacity="0.85"/>
+			<stop offset="0.55" stop-color="${color}" stop-opacity="0.85"/>
+			<stop offset="1" stop-color="${color}" stop-opacity="0.25"/>
+		</radialGradient>`
+}
+
+function canvas(
+	meta: BrandMeta,
+	w: number,
+	h: number,
+	glow: { cx: number; cy: number },
+	layout: 'banner' | 'centred'
+): string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(meta.name)} — ${esc(meta.tagline)}">
 	<defs>
 		<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
 			<stop offset="0" stop-color="${meta.light ? LIGHT.bg[0] : '#0d1117'}"/>
 			<stop offset="1" stop-color="${meta.light ? LIGHT.bg[1] : '#090c13'}"/>
-		</linearGradient>
+		</linearGradient>${meta.background ? `\n\t\t${washGradient(meta, layout)}` : ''}
 		<radialGradient id="glow" cx="${glow.cx}" cy="${glow.cy}" r="0.55">
 			<stop offset="0" stop-color="${meta.accent}" stop-opacity="0.15"/>
 			<stop offset="1" stop-color="${meta.accent}" stop-opacity="0"/>
@@ -309,7 +335,7 @@ function canvas(meta: BrandMeta, w: number, h: number, glow: { cx: number; cy: n
 			? `
 	<!-- Artwork: brand/background.png, cropped to fill, washed dark so the text stays readable. -->
 	<image href="background.png" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>
-	<rect width="${w}" height="${h}" fill="${meta.light ? LIGHT.bg[0] : '#0d1117'}" fill-opacity="0.55"/>`
+	<rect width="${w}" height="${h}" fill="url(#wash)"/>`
 			: ''
 	}
 	<rect width="${w}" height="${h}" fill="url(#glow)"/>
@@ -319,7 +345,7 @@ function canvas(meta: BrandMeta, w: number, h: number, glow: { cx: number; cy: n
 
 /** 1280×320 README banner — left-aligned lockup, install pill on the right. */
 export function bannerSvg(meta: BrandMeta): string {
-	return `${canvas(meta, 1280, 320, { cx: 0.16, cy: 0 })}
+	return `${canvas(meta, 1280, 320, { cx: 0.16, cy: 0 }, 'banner')}
 ${mark(60, 88, 72)}
 
 	<text x="156" y="150" font-family="${SANS}" font-weight="800" font-size="62" letter-spacing="-1.5">${wordmark(meta)}</text>
@@ -332,7 +358,7 @@ ${installPanel(meta, { x: 845, y: 118, w: 378, h: 84, size: 20 })}
 
 /** 1280×786 mobile banner — the same content stacked so it stays legible on a phone. */
 export function bannerMobileSvg(meta: BrandMeta): string {
-	return `${canvas(meta, 1280, 786, { cx: 0.12, cy: 0.05 })}
+	return `${canvas(meta, 1280, 786, { cx: 0.12, cy: 0.05 }, 'centred')}
 ${mark(565, 104, 150)}
 
 	<text x="640" y="360" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="76" letter-spacing="-1.8">${wordmark(meta)}</text>
@@ -355,7 +381,7 @@ ${installPanel(meta, { x: 427, y: 470, w: 426, h: 78, size: 24 })}`
 
 /** 1280×640 Open Graph / GitHub social card. Keep content inside an ~8% safe inset. */
 export function socialCardSvg(meta: BrandMeta): string {
-	return `${canvas(meta, 1280, 640, { cx: 0.1, cy: 0.05 })}
+	return `${canvas(meta, 1280, 640, { cx: 0.1, cy: 0.05 }, 'centred')}
 ${lockup(meta)}
 </svg>
 `
@@ -372,7 +398,7 @@ function socialSvg(meta: BrandMeta, w: number, h: number, safe: Box): string {
 	const tx = safe.x + safe.w / 2 - s * (LOCKUP_BOX.x + LOCKUP_BOX.w / 2)
 	const ty = safe.y + safe.h / 2 - s * (LOCKUP_BOX.y + LOCKUP_BOX.h / 2)
 	const r = (n: number): number => Math.round(n * 1000) / 1000
-	return `${canvas(meta, w, h, { cx: 0.1, cy: 0.05 })}
+	return `${canvas(meta, w, h, { cx: 0.1, cy: 0.05 }, 'centred')}
 	<g transform="translate(${r(tx)} ${r(ty)}) scale(${r(s)})">
 ${lockup(meta)}
 	</g>
@@ -382,7 +408,7 @@ ${lockup(meta)}
 
 /** 400×400 profile picture. The tile sits at 60% so a circular crop never clips its corners. */
 export function avatarSvg(meta: BrandMeta): string {
-	return `${canvas(meta, 400, 400, { cx: 0.1, cy: 0.05 })}
+	return `${canvas(meta, 400, 400, { cx: 0.1, cy: 0.05 }, 'centred')}
 ${mark(80, 80, 240)}
 </svg>
 `
