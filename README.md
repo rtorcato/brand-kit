@@ -1,7 +1,7 @@
 <!-- brand-kit:banner:start -->
 <picture>
   <source media="(max-width: 640px)" srcset="./brand/banner-mobile.png">
-  <img src="./brand/banner.png" alt="brand-kit banner" width="1600">
+  <img src="./brand/banner.png" alt="Banner, social card and favicon for any repo." width="1600">
 </picture>
 <!-- brand-kit:banner:end -->
 
