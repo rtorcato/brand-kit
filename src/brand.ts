@@ -254,9 +254,13 @@ function mark(x: number, y: number, size: number): string {
 
 /** `shared-docs` renders as a muted `repo-` and an accented `tooling`. */
 function wordmark(meta: BrandMeta): string {
+	const text = meta.light ? LIGHT.text : TEXT
+	// The grey fallback accent marks an unbranded repo, but grey on the last
+	// segment reads as disabled, so the whole name is drawn in text instead.
+	const accent = meta.accent === NEUTRAL_ACCENT ? text : meta.accent
 	const i = meta.name.lastIndexOf('-')
-	if (i <= 0) return `<tspan fill="${meta.accent}">${esc(meta.name)}</tspan>`
-	return `<tspan fill="${meta.light ? LIGHT.text : TEXT}">${esc(meta.name.slice(0, i + 1))}</tspan><tspan fill="${meta.accent}">${esc(meta.name.slice(i + 1))}</tspan>`
+	if (i <= 0) return `<tspan fill="${accent}">${esc(meta.name)}</tspan>`
+	return `<tspan fill="${text}">${esc(meta.name.slice(0, i + 1))}</tspan><tspan fill="${accent}">${esc(meta.name.slice(i + 1))}</tspan>`
 }
 
 function taglineBlock(
@@ -283,7 +287,7 @@ function installPanel(
 ): string {
 	if (!meta.install) return ''
 	return `
-	<rect x="${opts.x}" y="${opts.y}" width="${opts.w}" height="${opts.h}" rx="14" fill="${meta.light ? LIGHT.pill : '#11151d'}" stroke="${meta.light ? LIGHT.stroke : '#232936'}" stroke-width="1"/>
+	<rect x="${opts.x}" y="${opts.y}" width="${opts.w}" height="${opts.h}" rx="14" fill="${meta.light ? LIGHT.pill : '#11151d'}" stroke="${meta.light ? LIGHT.stroke : '#30363d'}" stroke-width="1"/>
 	<text xml:space="preserve" x="${opts.x + opts.w / 2}" y="${opts.y + opts.h / 2 + opts.size / 3}" text-anchor="middle" font-family="${MONO}" font-size="${opts.size}"><tspan fill="${meta.accent}">npm i </tspan><tspan fill="${meta.light ? LIGHT.text : TEXT}">${esc(meta.install)}</tspan></text>`
 }
 
