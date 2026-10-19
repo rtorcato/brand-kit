@@ -9,6 +9,7 @@ import {
 	addReadmeBanner,
 	BANNER_END,
 	BANNER_START,
+	bannerSvg,
 	buildBannerBlock,
 	faviconSvg,
 	packIco,
@@ -24,6 +25,18 @@ test('the docs site copies favicon.svg and the card, never the raster favicon.ic
 	assert.deepEqual(DOCS_ASSETS, ['favicon.svg', 'social-card.png'])
 	assert.match(RENDER_SH, /for f in favicon\.svg social-card\.png; do/)
 	assert.doesNotMatch(RENDER_SH, /favicon\.ico social-card/)
+})
+
+test('an unbranded wordmark is all text colour; grey stays on the npm i prefix and pill edge is #30363d', () => {
+	const svg = bannerSvg({
+		name: 'basic-lib',
+		tagline: 'A tagline',
+		accent: '#8b95a7',
+		install: 'basic-lib',
+	})
+	assert.ok(svg.includes('<tspan fill="#e6edf3">basic-</tspan><tspan fill="#e6edf3">lib</tspan>'))
+	assert.ok(svg.includes('<tspan fill="#8b95a7">npm i </tspan>'))
+	assert.ok(svg.includes('stroke="#30363d"'))
 })
 
 test('wrapText wraps to the fewest lines and ellipsises what overflows maxLines', () => {
