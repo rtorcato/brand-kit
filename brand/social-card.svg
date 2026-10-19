@@ -36,6 +36,6 @@
 		<tspan x="640" y="404">favicon for any repo.</tspan>
 	</text>
 
-	<rect x="427" y="452" width="426" height="78" rx="14" fill="#11151d" stroke="#232936" stroke-width="1"/>
+	<rect x="427" y="452" width="426" height="78" rx="14" fill="#11151d" stroke="#30363d" stroke-width="1"/>
 	<text xml:space="preserve" x="640" y="499" text-anchor="middle" font-family="Menlo, 'DejaVu Sans Mono', monospace" font-size="24"><tspan fill="#a3e635">npm i </tspan><tspan fill="#e6edf3">@rtorcato/brand-kit</tspan></text>
 </svg>

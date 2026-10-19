@@ -36,6 +36,6 @@
 		<tspan x="62" y="198">Banner, social card and favicon for any repo.</tspan>
 	</text>
 
-	<rect x="845" y="118" width="378" height="84" rx="14" fill="#11151d" stroke="#232936" stroke-width="1"/>
+	<rect x="845" y="118" width="378" height="84" rx="14" fill="#11151d" stroke="#30363d" stroke-width="1"/>
 	<text xml:space="preserve" x="1034" y="166.66666666666666" text-anchor="middle" font-family="Menlo, 'DejaVu Sans Mono', monospace" font-size="20"><tspan fill="#a3e635">npm i </tspan><tspan fill="#e6edf3">@rtorcato/brand-kit</tspan></text>
 </svg>
