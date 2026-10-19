@@ -50,15 +50,22 @@ brand-kit adds a `<picture>` block to the top of `README.md` that swaps to the
 mobile banner under 640px:
 
 ```html
-<!-- js-tooling:banner:start -->
+<!-- brand-kit:banner:start -->
 <picture>
   <source media="(max-width: 640px)" srcset="./brand/banner-mobile.png">
-  <img src="./brand/banner.png" alt="my-lib banner" width="1600">
+  <img src="./brand/banner.png" alt="Tiny helpers for my-lib" width="1600">
 </picture>
-<!-- js-tooling:banner:end -->
+<!-- brand-kit:banner:end -->
 ```
 
-The markers let later runs replace the block in place. Leave them in.
+The markers let later runs replace the block in place. Leave them in. A README
+still carrying the older `js-tooling:banner` markers is rewritten to the
+`brand-kit` ones on the next `brand-kit init`.
+
+The `alt` text is the banner tagline: `--tagline`, else the family entry's
+tagline, else the `package.json` `description`. Quotes, `&`, `<` and `>` are
+escaped. With no tagline at all, it falls back to `<name> banner`, as in
+`my-lib banner`.
 
 ## Docusaurus sites
 
