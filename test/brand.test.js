@@ -9,6 +9,7 @@ import {
 	addReadmeBanner,
 	BANNER_END,
 	BANNER_START,
+	bannerMobileSvg,
 	bannerSvg,
 	buildBannerBlock,
 	faviconSvg,
@@ -62,6 +63,29 @@ test('wrapText balances lines instead of orphaning the last word', () => {
 	assert.equal(wrapText('one two three four five six seven', 14, 3).length, 3)
 	// A word longer than the budget still gets a line of its own.
 	assert.deepEqual(wrapText('a supercalifragilistic b', 10, 3), ['a', 'supercalifragilistic', 'b'])
+})
+
+test('the mobile banner centres its stack for 1-, 2- and 3-line taglines, with and without the pill', () => {
+	const base = { name: 'demo', accent: '#e879f9', install: 'demo' }
+	const taglines = [
+		['Banner, social card.', 1],
+		['Banner, social card and favicon for any repo.', 2],
+		[
+			'Banner, social card and favicon for any repo, drawn from one tiny command in your terminal today.',
+			3,
+		],
+	]
+	for (const [tagline, lines] of taglines) {
+		assert.equal(wrapText(tagline, 42, 3).length, lines, tagline)
+		const withPill = bannerMobileSvg({ ...base, tagline })
+		// The mark's top and the pill's bottom sit the same distance from the canvas edges.
+		const top = Number(withPill.match(/<image href="favicon\.svg" x="565" y="(\d+)"/)[1])
+		const pill = withPill.match(/<rect x="427" y="(\d+)" width="426" height="78" rx="14"/)
+		assert.ok(pill, tagline)
+		assert.equal(top, 786 - (Number(pill[1]) + 78), tagline)
+		const noPill = bannerMobileSvg({ ...base, tagline, install: null })
+		assert.doesNotMatch(noPill, /rx="14"/)
+	}
 })
 
 test('upsertBanner refreshes in place, ignores a table row naming banner.png, else prepends', () => {
