@@ -50,15 +50,22 @@ brand-kit adds a `<picture>` block to the top of `README.md` that swaps to the
 mobile banner under 640px:
 
 ```html
-<!-- js-tooling:banner:start -->
+<!-- brand-kit:banner:start -->
 <picture>
   <source media="(max-width: 640px)" srcset="./brand/banner-mobile.png">
-  <img src="./brand/banner.png" alt="my-lib banner" width="1600">
+  <img src="./brand/banner.png" alt="Turn your repo into a branded banner" width="1600">
 </picture>
-<!-- js-tooling:banner:end -->
+<!-- brand-kit:banner:end -->
 ```
 
-The markers let later runs replace the block in place. Leave them in.
+The markers let later runs replace the block in place. Leave them in. Older
+`js-tooling:banner` markers are rewritten to the `brand-kit` ones on the next run.
+
+The `alt` text is the banner tagline, so the image and its text description
+match. It comes from the first of these that is set: the `--tagline` flag, the
+tagline for an `@rtorcato` family package, then the `description` in
+`package.json`. Quotes, `&`, `<` and `>` are escaped. If none is set, the alt
+falls back to `<name> banner`.
 
 ## Docusaurus sites
 
