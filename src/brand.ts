@@ -356,44 +356,48 @@ ${installPanel(meta, { x: 845, y: 118, w: 378, h: 84, size: 20 })}
 `
 }
 
-/** Top edge that centres a stack `height` px tall on a canvas `canvasH` px tall. */
-const centredTop = (canvasH: number, height: number): number => Math.round((canvasH - height) / 2)
+/**
+ * Vertical positions for the centred stack (mark, wordmark, tagline, pill) on a
+ * canvas `h` tall. The rhythm is fixed: tagline 72px under the wordmark baseline,
+ * pill 48px under the last tagline baseline. Only the offset depends on the line
+ * count and whether the pill shows, so the stack stays centred for any copy.
+ */
+function centredStack(
+	meta: BrandMeta,
+	h: number,
+	o: { mark: number; gap: number; step: number; maxChars: number; pillH: number }
+): { mark: number; word: number; tag: number; pill: number } {
+	const lines = wrapText(meta.tagline, o.maxChars, 3).length
+	const last = 72 + (lines - 1) * o.step
+	const bottom = meta.install ? last + 48 + o.pillH : last
+	const top = (h - (o.mark + o.gap + bottom)) / 2
+	const word = top + o.mark + o.gap
+	return { mark: top, word, tag: word + 72, pill: word + last + 48 }
+}
 
 /** 1280×786 mobile banner — the same content stacked so it stays legible on a phone. */
 export function bannerMobileSvg(meta: BrandMeta): string {
-	// Offsets from the mark's top edge. The stack's height depends on the tagline's
-	// line count and whether the pill shows, so it is centred on that height.
-	const lines = wrapText(meta.tagline, 42, 3).length
-	const word = 150 + 106 // mark bottom, then the wordmark baseline
-	const tag = word + 72 // first tagline baseline
-	const lastLine = tag + 44 * (lines - 1)
-	const pillY = lastLine + 80
-	const top = centredTop(786, meta.install ? pillY + 78 : lastLine)
+	const s = centredStack(meta, 786, { mark: 150, gap: 106, step: 44, maxChars: 42, pillH: 78 })
 	return `${canvas(meta, 1280, 786, { cx: 0.12, cy: 0.05 }, 'centred')}
-${mark(565, top, 150)}
+${mark(565, s.mark, 150)}
 
-	<text x="640" y="${top + word}" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="76" letter-spacing="-1.8">${wordmark(meta)}</text>
+	<text x="640" y="${s.word}" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="76" letter-spacing="-1.8">${wordmark(meta)}</text>
 
-${taglineBlock(meta, { x: 640, y: top + tag, step: 44, size: 30, centred: true, maxChars: 42 })}
-${installPanel(meta, { x: 427, y: top + pillY, w: 426, h: 78, size: 24 })}
+${taglineBlock(meta, { x: 640, y: s.tag, step: 44, size: 30, centred: true, maxChars: 42 })}
+${installPanel(meta, { x: 427, y: s.pill, w: 426, h: 78, size: 24 })}
 </svg>
 `
 }
 
 /** The social card's centred stack — mark, wordmark, tagline, pill — laid out on 1280×640. */
 function lockup(meta: BrandMeta): string {
-	const lines = wrapText(meta.tagline, 44, 3).length
-	const word = 100 + 80 // mark bottom, then the wordmark baseline
-	const tag = word + 72 // first tagline baseline
-	const lastLine = tag + 42 * (lines - 1)
-	const pillY = lastLine + 56
-	const top = centredTop(640, meta.install ? pillY + 78 : lastLine)
-	return `${mark(590, top, 100)}
+	const s = centredStack(meta, 640, { mark: 100, gap: 80, step: 42, maxChars: 44, pillH: 78 })
+	return `${mark(590, s.mark, 100)}
 
-	<text x="640" y="${top + word}" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="76" letter-spacing="-1.8">${wordmark(meta)}</text>
+	<text x="640" y="${s.word}" text-anchor="middle" font-family="${SANS}" font-weight="800" font-size="76" letter-spacing="-1.8">${wordmark(meta)}</text>
 
-${taglineBlock(meta, { x: 640, y: top + tag, step: 42, size: 28, centred: true, maxChars: 44 })}
-${installPanel(meta, { x: 427, y: top + pillY, w: 426, h: 78, size: 24 })}`
+${taglineBlock(meta, { x: 640, y: s.tag, step: 42, size: 28, centred: true, maxChars: 44 })}
+${installPanel(meta, { x: 427, y: s.pill, w: 426, h: 78, size: 24 })}`
 }
 
 /** 1280×640 Open Graph / GitHub social card. Keep content inside an ~8% safe inset. */
@@ -406,8 +410,8 @@ ${lockup(meta)}
 
 type Box = { x: number; y: number; w: number; h: number }
 
-/** Where {@link lockup} draws on its 1280×640 canvas: a box centred on y=320, as the lockup is. */
-const LOCKUP_BOX: Box = { x: 160, y: 95, w: 960, h: 450 }
+/** Where {@link lockup} draws at its tallest (three-line tagline), centred on its 1280×640 canvas. */
+const LOCKUP_BOX: Box = { x: 160, y: 89, w: 960, h: 462 }
 
 /** Any other canvas: the social card's lockup scaled to fit, centred in `safe`. */
 function socialSvg(meta: BrandMeta, w: number, h: number, safe: Box): string {
