@@ -11,6 +11,8 @@ Banner, mobile banner, social card and favicon for a repo, generated as SVG
 sources under `brand/` and rendered to PNG, so a banner can be recoloured or
 retitled instead of being a binary nobody can regenerate.
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/rtorcato)
+
 Works in any repo, with or without a docs site. No install needed:
 
 ```sh
