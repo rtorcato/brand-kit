@@ -1,9 +1,9 @@
-<!-- js-tooling:banner:start -->
+<!-- brand-kit:banner:start -->
 <picture>
   <source media="(max-width: 640px)" srcset="./brand/banner-mobile.png">
   <img src="./brand/banner.png" alt="custom-lib banner" width="1600">
 </picture>
-<!-- js-tooling:banner:end -->
+<!-- brand-kit:banner:end -->
 
 # custom
 
