@@ -18,7 +18,7 @@ The first of:
 
 1. `--tagline "…"`
 2. the repo's entry in the
-   [`@rtorcato/shared-docs`](https://github.com/rtorcato/shared-docs) family list
+   [`@rtorcato/shared-docs`](https://github.com/rtorcato/shared-docs) sibling list
 3. the `package.json` `description`
 
 Keep it to two lines on the mobile banner. brand-kit warns when it will be cut
@@ -29,7 +29,7 @@ off.
 The first of:
 
 1. `--accent "#rrggbb"`
-2. the family entry's accent
+2. the shared-docs entry's accent
 3. the docs site's theme colour
 4. the colour of an existing favicon
 5. neutral grey

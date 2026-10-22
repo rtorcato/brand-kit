@@ -110,9 +110,9 @@ are deterministic and need no key; run `--ai` again only for new art. Your own
 
 - **Name:** `package.json` `name`, without the scope.
 - **Tagline:** `--tagline`, else the repo's entry in the
-  [`@rtorcato/shared-docs`](https://github.com/rtorcato/shared-docs) family
+  [`@rtorcato/shared-docs`](https://github.com/rtorcato/shared-docs) sibling
   list, else the `package.json` description.
-- **Accent:** `--accent`, else the family entry, else the docs site's theme
+- **Accent:** `--accent`, else the shared-docs entry, else the docs site's theme
   colour, else the favicon's colour, else neutral grey.
 
 An existing `favicon.svg` (repo root or `apps/docs/static/img/`) is kept as the

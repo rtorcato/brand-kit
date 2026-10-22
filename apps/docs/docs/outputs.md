@@ -62,7 +62,7 @@ The markers let later runs replace the block in place. Leave them in. A README
 still carrying the older `js-tooling:banner` markers is rewritten to the
 `brand-kit` ones on the next `brand-kit init`.
 
-The `alt` text is the banner tagline: `--tagline`, else the family entry's
+The `alt` text is the banner tagline: `--tagline`, else the shared-docs entry's
 tagline, else the `package.json` `description`. Quotes, `&`, `<` and `>` are
 escaped. With no tagline at all, it falls back to `<name> banner`, as in
 `my-lib banner`.
