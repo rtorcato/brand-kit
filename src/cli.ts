@@ -35,8 +35,8 @@ Commands:
 
 Options:
   --dir <path>      Target repo (default: cwd)
-  --tagline <text>  Banner tagline (default: family entry, else package.json description)
-  --accent <hex>    Accent colour (default: family entry, docs theme, favicon, else grey)
+  --tagline <text>  Banner tagline (default: shared-docs entry, else package.json description)
+  --accent <hex>    Accent colour (default: shared-docs entry, docs theme, favicon, else grey)
   --update          init: rewrite generated sources that differ (never favicon.svg)
   --social          init: also write avatar, Instagram post, story, and X, LinkedIn,
                     YouTube and Facebook headers

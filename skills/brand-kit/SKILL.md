@@ -25,7 +25,7 @@ change the look through flags, never by hand-editing the generated SVGs.
    ```
 
    Add `--tagline "Short line"` and/or `--accent "#rrggbb"` when the user
-   gives them; otherwise defaults come from the shared-docs family entry, then
+   gives them; otherwise defaults come from the shared-docs entry, then
    `package.json`.
 3. Verify: `npx @rtorcato/brand-kit doctor --json` (`--strict` exits 1 on
    warnings too, useful for CI). Report any fail/warn.
