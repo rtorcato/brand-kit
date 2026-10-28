@@ -9,13 +9,8 @@ on:
       - 'src/**'
       - 'README.md'
       - '.github/workflows/docs.yml'
-  # The changelog page is built from GitHub Releases. A release created with
-  # GITHUB_TOKEN never fires `release: published`, so rebuild once Release
-  # succeeds on main instead.
-  workflow_run:
-    workflows: ['Release']
-    types: [completed]
-    branches: [main]
+  # release.yml dispatches this after a publish, so the changelog page (built
+  # from the GitHub releases) picks up the new ones.
   workflow_dispatch:
 
 permissions:
@@ -24,7 +19,6 @@ permissions:
 jobs:
   # https://docs.torcato.dev/brand-kit/
   cloudflare:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     permissions:
       contents: read
     uses: rtorcato/repo-tooling/.github/workflows/docs-deploy-cloudflare.yml@v5.1.4
