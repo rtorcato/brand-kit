@@ -12,13 +12,19 @@ a docs site can use it.
 
 ## Release
 
-Releases are batched: merging to `main` no longer releases. `release.yml`
-runs semantic-release only when a milestone is closed or the workflow is
-dispatched by hand, and then publishes everything merged since the last tag.
-The `release` environment has required reviewers, so each run still waits for
-manual approval before it publishes. A newer request supersedes a run still
-waiting for approval, never one already publishing. `feat:` is a minor release, `fix:` a patch, and `chore:`/`docs:`/`ci:` release nothing. `version`
-in `package.json` is a placeholder; npm and the git tags are the record.
+Releases use **Changesets**, batched. A PR that changes the published package
+adds a changeset (`pnpm changeset`). Each push to `main` opens or updates the
+"Version Packages" PR, which bumps `package.json`'s `version` and writes
+`CHANGELOG.md`; merging it is the release. Its `publish` job in
+`.github/workflows/release.yml` waits for one approval in the `release` GitHub
+environment (required reviewers), because npm's trusted publisher is pinned to
+`release.yml` + `release`: rename either and publishing fails with
+`404 package not found`. A manual dispatch (`gh workflow run release.yml`)
+retries a failed publish. `release.yml` dispatches `docs.yml` after a publish to
+rebuild the changelog page.
+
+`pnpm-workspace.yaml` lists `.` so Changesets sees the root package; drop it and
+every changeset fails with "not in the workspace".
 
 ## Boundaries
 

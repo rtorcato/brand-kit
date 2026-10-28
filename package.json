@@ -1,6 +1,6 @@
 {
   "name": "@rtorcato/brand-kit",
-  "version": "0.0.0-development",
+  "version": "1.1.3",
   "description": "Banner, social card and favicon for a repo — SVG sources you can regenerate, rendered to PNG.",
   "type": "module",
   "packageManager": "pnpm@11.9.0",
@@ -37,18 +37,18 @@
     "publint": "publint --strict",
     "format": "biome format .",
     "check": "biome check .",
-    "check:fix": "biome check --fix ."
+    "check:fix": "biome check --fix .",
+    "changeset": "changeset"
   },
   "dependencies": {
     "@rtorcato/shared-docs": "^1.16.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.7",
+    "@changesets/cli": "^3.0.3",
     "@rtorcato/repo-tooling": "^6.0.0",
     "@types/node": "^26.6.3",
-    "conventional-changelog-conventionalcommits": "^10.4.0",
     "publint": "^0.3.23",
-    "semantic-release": "^25.0.8",
     "typescript": "^7.0.2"
   },
   "publishConfig": {
