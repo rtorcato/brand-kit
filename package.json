@@ -44,11 +44,11 @@
     "@rtorcato/shared-docs": "^1.16.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.7",
+    "@biomejs/biome": "^2.6.3",
     "@changesets/cli": "^3.0.3",
-    "@rtorcato/repo-tooling": "^6.0.0",
-    "@types/node": "^26.6.3",
-    "publint": "^0.3.23",
+    "@rtorcato/repo-tooling": "^6.1.1",
+    "@types/node": "^26.6.5",
+    "publint": "^0.3.25",
     "typescript": "^7.0.2"
   },
   "publishConfig": {
