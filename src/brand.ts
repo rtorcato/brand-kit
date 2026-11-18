@@ -10,7 +10,7 @@
  */
 import { execFileSync, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { exists, read, writeIfMissing } from './fs.js'
 
@@ -762,21 +762,27 @@ const LEGACY_MARKERS = [
 ] as const
 
 /** The README `<picture>` banner, mobile variant under 640px, as a delimited block. */
-export function buildBannerBlock(name: string, light = false, tagline?: string): string {
+export function buildBannerBlock(
+	name: string,
+	light = false,
+	tagline?: string,
+	/** Where `brand/` lives. Default `.` (relative); npm resolves relative URLs against `repository.directory`, so monorepo packages pass an absolute raw URL. */
+	base = '.'
+): string {
 	// First matching <source> wins, so the more specific light+mobile one comes first.
 	const lightMobile = light
-		? `  <source media="(max-width: 640px) and (prefers-color-scheme: light)" srcset="./brand/banner-mobile-light.png">
+		? `  <source media="(max-width: 640px) and (prefers-color-scheme: light)" srcset="${base}/brand/banner-mobile-light.png">
 `
 		: ''
 	const lightDesktop = light
-		? `  <source media="(prefers-color-scheme: light)" srcset="./brand/banner-light.png">
+		? `  <source media="(prefers-color-scheme: light)" srcset="${base}/brand/banner-light.png">
 `
 		: ''
 	const alt = tagline ? esc(tagline) : `${esc(name)} banner`
 	return `${BANNER_START}
 <picture>
-${lightMobile}  <source media="(max-width: 640px)" srcset="./brand/banner-mobile.png">
-${lightDesktop}  <img src="./brand/banner.png" alt="${alt}" width="1600">
+${lightMobile}  <source media="(max-width: 640px)" srcset="${base}/brand/banner-mobile.png">
+${lightDesktop}  <img src="${base}/brand/banner.png" alt="${alt}" width="1600">
 </picture>
 ${BANNER_END}`
 }
@@ -805,16 +811,59 @@ export function upsertBanner(readme: string, block: string): string {
 	return `${block}\n\n${readme}`
 }
 
+/** `owner/repo` from a package.json `repository` (string, shorthand or object), else null. */
+function githubSlug(pkg: Pkg): string | null {
+	const repo = pkg?.repository
+	const url = typeof repo === 'string' ? repo : (repo as { url?: unknown } | undefined)?.url
+	if (typeof url !== 'string') return null
+	const m = url.match(/(?:github(?:\.com)?[:/])?([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/i)
+	return m ? `${m[1]}/${m[2]}` : null
+}
+
+/** The repo's default branch from git, else `main`. */
+function defaultBranch(dir: string): string {
+	const r = spawnSync('git', ['symbolic-ref', '--short', 'refs/remotes/origin/HEAD'], {
+		cwd: dir,
+		encoding: 'utf8',
+	})
+	const ref = r.status === 0 ? r.stdout.trim().replace(/^origin\//, '') : ''
+	return ref || 'main'
+}
+
+/** Absolute raw.githubusercontent.com URL of the repo root, for READMEs npm shows away from it. */
+function rawBase(pkg: Pkg, dir: string): string | null {
+	const slug = githubSlug(pkg)
+	return slug ? `https://raw.githubusercontent.com/${slug}/${defaultBranch(dir)}` : null
+}
+
+/** package.json of each non-private workspace package under `packages/*`. */
+async function workspacePackages(dir: string): Promise<string[]> {
+	const root = path.join(dir, 'packages')
+	if (!(await exists(root))) return []
+	const out: string[] = []
+	for (const entry of (await readdir(root, { withFileTypes: true })).filter((e) =>
+		e.isDirectory()
+	)) {
+		try {
+			const pkgDir = path.join(root, entry.name)
+			const meta = JSON.parse(await read(path.join(pkgDir, 'package.json')))
+			if (meta.private !== true && (await exists(path.join(pkgDir, 'README.md')))) out.push(pkgDir)
+		} catch {
+			// No package.json, or unreadable: not a package.
+		}
+	}
+	return out.sort()
+}
+
 /** Add the banner block to README.md once `brand/banner.png` exists to show. */
 export async function addReadmeBanner(
 	targetDir: string,
 	name: string,
 	opts: BrandOptions = {}
-): Promise<string | null> {
+): Promise<string[]> {
 	const file = path.join(targetDir, 'README.md')
-	if (!(await exists(file))) return null
-	if (!(await exists(path.join(targetDir, 'brand', 'banner.png')))) return null
-	const readme = await read(file)
+	if (!(await exists(file))) return []
+	if (!(await exists(path.join(targetDir, 'brand', 'banner.png')))) return []
 	let pkg: Pkg = null
 	try {
 		const pkgFile = path.join(targetDir, 'package.json')
@@ -825,16 +874,29 @@ export async function addReadmeBanner(
 		// Ignore errors reading package.json; fall back to name-only alt.
 	}
 	const meta = await resolveBrandMeta(pkg, targetDir, opts)
-	const next = upsertBanner(
-		readme,
-		buildBannerBlock(
-			name,
-			(await exists(path.join(targetDir, 'brand', 'banner-light.png'))) &&
-				(await exists(path.join(targetDir, 'brand', 'banner-mobile-light.png'))),
-			meta.tagline === TAGLINE_PLACEHOLDER ? undefined : meta.tagline
-		)
-	)
-	if (next === readme) return null
-	await writeFile(file, next)
-	return 'README.md'
+	const light =
+		(await exists(path.join(targetDir, 'brand', 'banner-light.png'))) &&
+		(await exists(path.join(targetDir, 'brand', 'banner-mobile-light.png')))
+	const tagline = meta.tagline === TAGLINE_PLACEHOLDER ? undefined : meta.tagline
+	const written: string[] = []
+	const put = async (rel: string, base?: string): Promise<void> => {
+		const target = path.join(targetDir, rel)
+		const current = await read(target)
+		const next = upsertBanner(current, buildBannerBlock(name, light, tagline, base))
+		if (next === current) return
+		await writeFile(target, next)
+		written.push(rel)
+	}
+	const pkgRepo = (pkg?.repository ?? null) as { directory?: unknown } | string | null
+	const inSubdir = typeof pkgRepo === 'object' && pkgRepo !== null && !!pkgRepo.directory
+	const base = rawBase(pkg, targetDir)
+	// A package with `repository.directory` is shown by npm from that subdirectory, where `./brand/` is missing.
+	await put('README.md', inSubdir && base ? base : undefined)
+	// Workspace packages publish their own README; the root one stays private.
+	if (base) {
+		for (const dir of await workspacePackages(targetDir)) {
+			await put(path.join(path.relative(targetDir, dir), 'README.md'), base)
+		}
+	}
+	return written
 }

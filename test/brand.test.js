@@ -111,6 +111,62 @@ test('the README banner alt is the tagline, else "<name> banner", never the plac
 	assert.match(await readmeFor({}), /alt="demo banner"/)
 })
 
+test('workspace package READMEs get an absolute-URL banner; root stays relative; idempotent', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'banner-ws-'))
+	mkdirSync(join(dir, 'brand'))
+	writeFileSync(join(dir, 'brand', 'banner.png'), '')
+	writeFileSync(join(dir, 'README.md'), '# root\n')
+	writeFileSync(
+		join(dir, 'package.json'),
+		JSON.stringify({ name: 'mono', repository: { url: 'git+https://github.com/acme/mono.git' } })
+	)
+	for (const [name, priv] of [
+		['a', false],
+		['b', true],
+	]) {
+		mkdirSync(join(dir, 'packages', name), { recursive: true })
+		writeFileSync(join(dir, 'packages', name, 'README.md'), `# ${name}\n`)
+		writeFileSync(
+			join(dir, 'packages', name, 'package.json'),
+			JSON.stringify({ name, private: priv })
+		)
+	}
+	const written = await addReadmeBanner(dir, 'mono', {})
+	assert.deepEqual(written, ['README.md', join('packages', 'a', 'README.md')])
+	const root = readFileSync(join(dir, 'README.md'), 'utf8')
+	const pkgA = readFileSync(join(dir, 'packages', 'a', 'README.md'), 'utf8')
+	assert.match(root, /src="\.\/brand\/banner\.png"/)
+	assert.match(
+		pkgA,
+		/src="https:\/\/raw\.githubusercontent\.com\/acme\/mono\/[\w.-]+\/brand\/banner\.png"/
+	)
+	assert.match(
+		pkgA,
+		/srcset="https:\/\/raw\.githubusercontent\.com\/acme\/mono\/[\w.-]+\/brand\/banner-mobile\.png"/
+	)
+	assert.equal(readFileSync(join(dir, 'packages', 'b', 'README.md'), 'utf8'), '# b\n')
+	assert.deepEqual(await addReadmeBanner(dir, 'mono', {}), [])
+})
+
+test('a package with repository.directory gets absolute banner URLs in its own README', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'banner-dir-'))
+	mkdirSync(join(dir, 'brand'))
+	writeFileSync(join(dir, 'brand', 'banner.png'), '')
+	writeFileSync(join(dir, 'README.md'), '# p\n')
+	writeFileSync(
+		join(dir, 'package.json'),
+		JSON.stringify({
+			name: 'p',
+			repository: { url: 'https://github.com/acme/mono.git', directory: 'packages/p' },
+		})
+	)
+	await addReadmeBanner(dir, 'p', {})
+	assert.match(
+		readFileSync(join(dir, 'README.md'), 'utf8'),
+		/https:\/\/raw\.githubusercontent\.com\/acme\/mono\//
+	)
+})
+
 test('packIco writes an ICONDIR with one entry per frame', () => {
 	const a = Buffer.from('aa')
 	const b = Buffer.from('bbb')
