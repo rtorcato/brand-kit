@@ -1,0 +1,2 @@
+# Changeset files need literal --- frontmatter; formatters turn it into a heading.
+.changeset/*.md
