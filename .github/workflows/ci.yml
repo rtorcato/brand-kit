@@ -70,11 +70,11 @@ jobs:
       # separate job — cheaper than passing artifacts between two short jobs.
       - run: pnpm build
       - run: pnpm test
-      # Node 24 as extra steps of `test` (not a matrix: a matrix renames the
-      # required check). Node 22 EOLs 2027-04-30.
+      # Node 22 as extra steps of `test` (not a matrix: a matrix renames the
+      # required check). `engines.node` stays >=22 until Node 22 EOLs 2027-04-30.
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 22
           cache: pnpm
       - run: pnpm build
       - run: pnpm test
