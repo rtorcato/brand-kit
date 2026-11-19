@@ -19,14 +19,14 @@
 	<rect width="1280" height="640" fill="url(#glow2)"/>
 
 	<!-- Logo mark: brand/favicon.svg — edit that file to change it on every canvas. -->
-	<image href="favicon.svg" x="590" y="120" width="100" height="100"/>
+	<image href="favicon.svg" x="590" y="131" width="100" height="100"/>
 
-	<text x="640" y="300" text-anchor="middle" font-family="Avenir Next" font-weight="800" font-size="76" letter-spacing="-1.8"><tspan fill="#e6edf3">custom-</tspan><tspan fill="#e879f9">lib</tspan></text>
+	<text x="640" y="311" text-anchor="middle" font-family="'Avenir Next', Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="76" letter-spacing="-1.8"><tspan fill="#e6edf3">custom-</tspan><tspan fill="#e879f9">lib</tspan></text>
 
-	<text text-anchor="middle" font-family="Avenir Next" font-weight="500" font-size="28" fill="#9ba6b8">
-		<tspan x="640" y="372">Brand assets you can regenerate</tspan>
+	<text text-anchor="middle" font-family="'Avenir Next', Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="500" font-size="28" fill="#9ba6b8">
+		<tspan x="640" y="383">Brand assets you can regenerate</tspan>
 	</text>
 
-	<rect x="427" y="470" width="426" height="78" rx="14" fill="#11151d" stroke="#232936" stroke-width="1"/>
-	<text xml:space="preserve" x="640" y="517" text-anchor="middle" font-family="Menlo" font-size="24"><tspan fill="#e879f9">npm i </tspan><tspan fill="#e6edf3">@acme/custom-lib</tspan></text>
+	<rect x="427" y="431" width="426" height="78" rx="14" fill="#11151d" stroke="#30363d" stroke-width="1"/>
+	<text xml:space="preserve" x="640" y="478" text-anchor="middle" font-family="Menlo, 'DejaVu Sans Mono', monospace" font-size="24"><tspan fill="#e879f9">npm i </tspan><tspan fill="#e6edf3">@acme/custom-lib</tspan></text>
 </svg>
