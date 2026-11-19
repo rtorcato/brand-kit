@@ -20,3 +20,14 @@ Regenerate one after a template change, from the repo root:
 ```sh
 pnpm build && node dist/cli.js render --dir examples/basic
 ```
+
+CI runs `scripts/check-examples.sh` (`doctor --strict` on the root and every
+example) and fails when they drift. To fix it, regenerate with the flags in the
+example's README plus `--update`, for example:
+
+```sh
+node dist/cli.js --dir examples/basic --update
+```
+
+An example generated with flags (like `custom`) also needs them listed in
+`scripts/check-examples.sh`.

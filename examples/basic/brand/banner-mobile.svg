@@ -19,14 +19,14 @@
 	<rect width="1280" height="786" fill="url(#glow2)"/>
 
 	<!-- Logo mark: brand/favicon.svg — edit that file to change it on every canvas. -->
-	<image href="favicon.svg" x="565" y="104" width="150" height="150"/>
+	<image href="favicon.svg" x="565" y="166" width="150" height="150"/>
 
-	<text x="640" y="360" text-anchor="middle" font-family="Avenir Next" font-weight="800" font-size="76" letter-spacing="-1.8"><tspan fill="#e6edf3">basic-</tspan><tspan fill="#8b95a7">lib</tspan></text>
+	<text x="640" y="422" text-anchor="middle" font-family="'Avenir Next', Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="76" letter-spacing="-1.8"><tspan fill="#e6edf3">basic-</tspan><tspan fill="#e6edf3">lib</tspan></text>
 
-	<text text-anchor="middle" font-family="Avenir Next" font-weight="500" font-size="30" fill="#9ba6b8">
-		<tspan x="640" y="510">A tiny library with a generated banner</tspan>
+	<text text-anchor="middle" font-family="'Avenir Next', Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="500" font-size="30" fill="#9ba6b8">
+		<tspan x="640" y="494">A tiny library with a generated banner</tspan>
 	</text>
 
-	<rect x="427" y="650" width="426" height="78" rx="14" fill="#11151d" stroke="#232936" stroke-width="1"/>
-	<text xml:space="preserve" x="640" y="697" text-anchor="middle" font-family="Menlo" font-size="24"><tspan fill="#8b95a7">npm i </tspan><tspan fill="#e6edf3">@acme/basic-lib</tspan></text>
+	<rect x="427" y="542" width="426" height="78" rx="14" fill="#11151d" stroke="#30363d" stroke-width="1"/>
+	<text xml:space="preserve" x="640" y="589" text-anchor="middle" font-family="Menlo, 'DejaVu Sans Mono', monospace" font-size="24"><tspan fill="#8b95a7">npm i </tspan><tspan fill="#e6edf3">@acme/basic-lib</tspan></text>
 </svg>
