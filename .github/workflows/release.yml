@@ -127,12 +127,6 @@ jobs:
       - name: 🏗️ Build
         run: pnpm build
 
-      # OIDC trusted publishing needs npm >= 11.5.1; Node 22 bundles npm 10, whose
-      # `npm publish` fails with ENEEDAUTH. Pinned to a range, not `latest`, so a
-      # future npm major can't change publishing unannounced.
-      - name: 📦 Upgrade npm for OIDC trusted publishing
-        run: npm install -g npm@^11.5.1
-
       # Publishes the package if its version is not on npm yet, then tags it and
       # creates its GitHub release. No NPM_TOKEN: OIDC trusted publishing, via
       # `id-token: write` above.
