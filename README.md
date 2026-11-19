@@ -20,6 +20,7 @@ npx @rtorcato/brand-kit                                   # init: brand/ + rende
 npx @rtorcato/brand-kit --tagline "Short line" --accent "#e879f9"
 npx @rtorcato/brand-kit --tagline "New line" --update     # rewrite changed sources
 npx @rtorcato/brand-kit --social                          # add Instagram, X, LinkedIn, … images
+npx @rtorcato/brand-kit --light                           # add light-theme banners for GitHub's light mode
 npx @rtorcato/brand-kit render                            # re-render stale PNGs
 npx @rtorcato/brand-kit doctor                            # report drift
 npx @rtorcato/brand-kit doctor --strict                   # CI: exit 1 on warnings too

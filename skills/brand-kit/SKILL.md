@@ -55,6 +55,7 @@ Needs one provider key:
 | `gemini` | `GEMINI_API_KEY` |
 | `leonardo` | `LEONARDO_API_KEY` |
 | `recraft` | `RECRAFT_API_TOKEN` |
+| `cloudflare` | `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` (token needs the Workers AI permission; checked last) |
 
 - Keys go in the shell or a **gitignored** `.env` in the target repo. Never
   ask the user to paste a key into chat, never write one to a tracked file,
