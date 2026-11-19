@@ -21,7 +21,7 @@ jobs:
   cloudflare:
     permissions:
       contents: read
-    uses: rtorcato/repo-tooling/.github/workflows/docs-deploy-cloudflare.yml@v6.4.0
+    uses: rtorcato/repo-tooling/.github/workflows/docs-deploy-cloudflare.yml@fa901ca1beed8e3f7edb90c9393323e31a65c8db # 6.4.0
     with:
       build-filter: '@rtorcato/brand-kit-docs'
       worker-name: brand-kit-docs
